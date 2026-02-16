@@ -14,7 +14,6 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-
 public class MainActivity extends AppCompatActivity {
 
     // initial variable for requesting access to local storage
