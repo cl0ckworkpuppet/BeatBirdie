@@ -8,12 +8,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
+
+    // list of songs that will be displayed in the app
     private List<Song> songs;
 
+    // constructor
     public SongAdapter(List<Song> songs) {
         this.songs = songs;
     }
 
+    // what is displayed in the viewbox
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView title, artist;
 
@@ -35,7 +39,8 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
     public void onBindViewHolder(ViewHolder holder, int position) {
         Song song = songs.get(position);
         holder.title.setText(song.title);
-        holder.artist.setText(song.artist);
+        String subtitle = song.artist + " - " + song.album; // done to avoid warning for concatenation with setText()
+        holder.artist.setText(subtitle);
     }
 
     @Override

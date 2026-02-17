@@ -61,13 +61,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // basically just allows the settings menu to be created
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
-
+    /* this is the big important function that sets up everything in the app
+    when it is launched. if you're adding something to the app, it's almost
+    certainly going to involve putting something in here. */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         List<Song> songList = new ArrayList<>();
-        // PLACEHOLDER VALUES. DO NOT KEEP
+        // PLACEHOLDER VALUES. DO NOT KEEP. REPLACE WITH PROPER USER FILES.
+        // TODO: exchange dummy values for getting local files
         songList.add(new Song("Dummy Song 1", "Guy", "Placeholder Album"));
         songList.add(new Song("Dummy Song 2", "Guy", "Placeholder Album"));
         songList.add(new Song("Dummy Song 3", "Guy", "Placeholder Album"));
@@ -95,5 +99,6 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
     }
 }
