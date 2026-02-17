@@ -1,5 +1,6 @@
 package com.example.it391_project_beatbirdie_for_android;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -11,6 +12,9 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.view.Menu;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -61,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     // basically just allows the settings menu to be created
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -100,5 +105,20 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
+
+        // buttons for the now playing bar
+        LinearLayout nowPlayingBar = findViewById(R.id.nowPlayingBar);
+        ImageButton playPause = findViewById(R.id.btnPlayPause);
+
+        nowPlayingBar.setOnClickListener(v -> {
+            // see: NowPlayingActivity.java
+            Intent intent = new Intent(MainActivity.this, NowPlayingActivity.class);
+            startActivity(intent);
+        });
+        playPause.setOnClickListener(v -> {
+            // placeholder
+            // TODO: add functionality to play/pause button
+            Toast.makeText(this, "Play/Pause clicked", Toast.LENGTH_SHORT).show();
+        });
     }
 }

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- permission statements for accessing local storage.
-    first is for android 10+. second is for android 9-.-->
+    <!--
+    permission statements for accessing local storage.
+    first is for android 10+. second is for android 9-.
+    -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
@@ -18,6 +19,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.IT391_PROJECT_BeatBirdie_for_Android">
+        <activity
+            android:name=".NowPlayingActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
