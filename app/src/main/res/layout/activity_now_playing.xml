@@ -37,7 +37,6 @@
             android:id="@+id/albumCover"
             android:layout_width="200dp"
             android:layout_height="200dp"
-            android:layout_marginTop="-125dp"
             android:src="@drawable/ic_launcher_foreground"/>
 
         <TextView
@@ -57,6 +56,43 @@
             android:textSize="6pt"/>
 
         <!-- TODO: place buttons for play/pause, skip, rewind, scrub, etc-->
+        <LinearLayout
+            android:layout_width="300dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="25dp"
+            android:gravity="center">
+            <SeekBar
+                android:id="@+id/scrubberBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="0"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="5dp"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/rewind"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@android:drawable/ic_media_rew"/>
+
+            <ImageButton
+                android:id="@+id/playpause"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@android:drawable/ic_media_play"/>
+
+            <ImageButton
+                android:id="@+id/skip"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@android:drawable/ic_media_ff"/>
+        </LinearLayout>
 
     </LinearLayout>
 
