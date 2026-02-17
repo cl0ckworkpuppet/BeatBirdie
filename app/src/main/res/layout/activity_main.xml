@@ -32,6 +32,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
+    <!-- NOW PLAYING BAR -->
     <LinearLayout
         android:id="@+id/nowPlayingBar"
         android:layout_width="0dp"
