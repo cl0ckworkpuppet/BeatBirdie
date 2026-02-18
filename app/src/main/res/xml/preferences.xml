@@ -14,13 +14,11 @@
     this will allow us to explain the algorithms in greater detail
     with a description below each one.
     for now, this will do for our MVP -->
-    <ListPreference
+    <Preference
         android:key="shuffle_algorithms"
         android:title="Shuffling Algorithms"
-        android:entries="@array/shuffle_options"
-        android:entryValues="@array/shuffle_algs"
-        android:defaultValue="fisher_yates"
-        android:summary="Change the way your music is shuffled"/>
+        android:summary="Change the way your music is shuffled"
+        android:fragment="com.example.it391_project_beatbirdie_for_android.ShuffleInfoFragment"/>
 
     <!-- allow users to keep their screen on while the app is in use -->
     <SwitchPreferenceCompat

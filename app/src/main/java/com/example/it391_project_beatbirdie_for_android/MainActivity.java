@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -139,10 +140,11 @@ public class MainActivity extends AppCompatActivity {
         songList.add(new Song("Dummy Song 11", "Guy", "Placeholder Album"));
         songList.add(new Song("Dummy Song 12", "Guy", "Placeholder Album"));
 
-        // just some stuff setting up some of the things on the home screen
-        // like the toolbar and the recyclerview list of songs
+        // connect this list to the song display
         SongAdapter adapter = new SongAdapter(songList);
         recyclerView.setAdapter(adapter);
+
+        // create toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
