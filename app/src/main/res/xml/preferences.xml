@@ -21,4 +21,10 @@
         android:entryValues="@array/shuffle_algs"
         android:defaultValue="fisher_yates"
         android:summary="Change the way your music is shuffled"/>
+
+    <SwitchPreferenceCompat
+        android:key="lock_screen_on"
+        android:title="Keep Screen On"
+        android:summary="Keep screen on during playback"/>
+
 </androidx.preference.PreferenceScreen>
