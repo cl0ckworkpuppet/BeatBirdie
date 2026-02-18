@@ -26,9 +26,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-
     // initial variable for requesting access to local storage
     private static final int REQUEST_PERMISSION_CODE = 101;
+
+    // imagebutton variable so the functions dont break lol
+    private ImageButton playPause;
 
     // function for checking whether or not permissions for file access have been granted.
     // if permissions already granted, return true.
@@ -85,6 +87,23 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    // updates the play/pause icon for the screen
+    private void updatePlayPauseIcon(ImageButton button) {
+        if (PlaybackHandler.isPaused()) {
+            button.setImageResource(android.R.drawable.ic_media_pause);
+        } else {
+            button.setImageResource(android.R.drawable.ic_media_play);
+        }
+    }
+
+    // allows for the updating of the play/pause button between screens
+    // to accurately represent whether the song is paused or not
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updatePlayPauseIcon(playPause);
+    }
+
     /* this is the big important function that sets up everything in the app
     when it is launched. if you're adding something to the app, it's almost
     certainly going to involve putting something in here. */
@@ -130,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
 
         // buttons for the now playing bar
         LinearLayout nowPlayingBar = findViewById(R.id.nowPlayingBar);
-        ImageButton playPause = findViewById(R.id.btnPlayPause);
+        playPause = findViewById(R.id.btnPlayPause);
 
         // send user to the Now Playing screen when they click the Now Playing bar
         nowPlayingBar.setOnClickListener(v -> {
@@ -141,9 +160,16 @@ public class MainActivity extends AppCompatActivity {
 
         // quick button to play/pause on the Now Playing bar for convenience
         playPause.setOnClickListener(v -> {
-            // placeholder
             // TODO: add functionality to play/pause button
+
+            // placeholder text
             Toast.makeText(this, "Play/Pause clicked", Toast.LENGTH_SHORT).show();
+
+            // toggle playback
+            PlaybackHandler.toggle();
+
+            // update icon
+            updatePlayPauseIcon(playPause);
         });
     }
 }
