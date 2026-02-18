@@ -1,3 +1,9 @@
+<!--
+the graphical setup for how each song shows up on the main screen.
+basically just creates a little box with song details.
+TODO: make these boxes clickable
+-->
+
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -5,6 +11,7 @@
     android:orientation="horizontal"
     android:padding="8dp">
 
+    <!-- album cover -->
     <ImageView
         android:id="@+id/albumCover"
         android:layout_width="64dp"
@@ -18,6 +25,7 @@
         android:paddingStart="12dp"
         android:gravity="center_vertical">
 
+        <!-- song title -->
         <TextView
             android:id="@+id/songTitle"
             android:text="Song Title"
@@ -26,9 +34,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
+        <!-- song artist and album (the ID name is a little misleading sorry) -->
         <TextView
             android:id="@+id/songArtist"
-            android:text="Artist Name"
+            android:text="Artist Name - Album"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 

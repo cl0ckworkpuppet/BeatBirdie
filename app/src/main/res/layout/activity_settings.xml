@@ -23,6 +23,7 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- container that holds the actual settings -->
     <FrameLayout
         android:id="@+id/settings_container"
         android:layout_width="match_parent"

@@ -99,10 +99,11 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        // creating the recyclerview
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
-
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // add songs to the list of songs
         List<Song> songList = new ArrayList<>();
         // PLACEHOLDER VALUES. DO NOT KEEP. REPLACE WITH PROPER USER FILES.
         // TODO: exchange dummy values for getting local files
@@ -119,6 +120,8 @@ public class MainActivity extends AppCompatActivity {
         songList.add(new Song("Dummy Song 11", "Guy", "Placeholder Album"));
         songList.add(new Song("Dummy Song 12", "Guy", "Placeholder Album"));
 
+        // just some stuff setting up some of the things on the home screen
+        // like the toolbar and the recyclerview list of songs
         SongAdapter adapter = new SongAdapter(songList);
         recyclerView.setAdapter(adapter);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -129,11 +132,14 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout nowPlayingBar = findViewById(R.id.nowPlayingBar);
         ImageButton playPause = findViewById(R.id.btnPlayPause);
 
+        // send user to the Now Playing screen when they click the Now Playing bar
         nowPlayingBar.setOnClickListener(v -> {
             // see: NowPlayingActivity.java
             Intent intent = new Intent(MainActivity.this, NowPlayingActivity.class);
             startActivity(intent);
         });
+
+        // quick button to play/pause on the Now Playing bar for convenience
         playPause.setOnClickListener(v -> {
             // placeholder
             // TODO: add functionality to play/pause button

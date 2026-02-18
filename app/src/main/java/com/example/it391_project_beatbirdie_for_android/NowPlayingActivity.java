@@ -11,6 +11,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.widget.Toolbar;
 
 public class NowPlayingActivity extends AppCompatActivity {
+
+    // functionality for back button on the toolbar
     @Override
     public boolean onSupportNavigateUp() {
         finish();
@@ -28,6 +30,7 @@ public class NowPlayingActivity extends AppCompatActivity {
             return insets;
         });
 
+        // creating the toolbar onscreen
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);

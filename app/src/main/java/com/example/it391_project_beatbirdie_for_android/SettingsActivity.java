@@ -11,6 +11,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class SettingsActivity extends AppCompatActivity {
 
+    // toolbar back button functionality
     @Override
     public boolean onSupportNavigateUp() {
         finish();
@@ -28,11 +29,15 @@ public class SettingsActivity extends AppCompatActivity {
             return insets;
         });
 
+        // create the toolbar onscreen
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
+        // stuff for the preferences setup.
+        // preferences used instead of recyclerview for its built-in functionality
+        // we may need to change this based on our needs, but I don't foresee that being an issue
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()

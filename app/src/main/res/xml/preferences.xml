@@ -22,6 +22,7 @@
         android:defaultValue="fisher_yates"
         android:summary="Change the way your music is shuffled"/>
 
+    <!-- allow users to keep their screen on while the app is in use -->
     <SwitchPreferenceCompat
         android:key="lock_screen_on"
         android:title="Keep Screen On"

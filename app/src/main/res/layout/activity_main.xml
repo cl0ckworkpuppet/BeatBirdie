@@ -47,6 +47,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- album cover-->
     <ImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -60,12 +61,14 @@
             android:gravity="center_vertical"
             android:paddingStart="12dp">
 
+            <!-- title -->
             <TextView
                 android:text="Dummy Song 1"
                 android:textStyle="bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
+            <!-- artist and album -->
             <TextView
                 android:text="Guy - Placeholder Album"
                 android:layout_width="wrap_content"
@@ -73,6 +76,7 @@
 
         </LinearLayout>
 
+        <!-- play/pause button -->
         <ImageButton
             android:id="@+id/btnPlayPause"
             android:layout_width="48dp"
