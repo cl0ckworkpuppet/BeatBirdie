@@ -12,6 +12,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -73,6 +74,17 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    // connects settings menu button to SettingsActivity
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_settings) {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     /* this is the big important function that sets up everything in the app
     when it is launched. if you're adding something to the app, it's almost
     certainly going to involve putting something in here. */
@@ -99,6 +111,13 @@ public class MainActivity extends AppCompatActivity {
         songList.add(new Song("Dummy Song 3", "Guy", "Placeholder Album"));
         songList.add(new Song("Dummy Song 4", "Guy", "Placeholder Album"));
         songList.add(new Song("Dummy Song 5", "Guy", "Placeholder Album"));
+        songList.add(new Song("Dummy Song 6", "Guy", "Placeholder Album"));
+        songList.add(new Song("Dummy Song 7", "Guy", "Placeholder Album"));
+        songList.add(new Song("Dummy Song 8", "Guy", "Placeholder Album"));
+        songList.add(new Song("Dummy Song 9", "Guy", "Placeholder Album"));
+        songList.add(new Song("Dummy Song 10", "Guy", "Placeholder Album"));
+        songList.add(new Song("Dummy Song 11", "Guy", "Placeholder Album"));
+        songList.add(new Song("Dummy Song 12", "Guy", "Placeholder Album"));
 
         SongAdapter adapter = new SongAdapter(songList);
         recyclerView.setAdapter(adapter);

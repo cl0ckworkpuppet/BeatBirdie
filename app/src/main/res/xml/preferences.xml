@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- TODO: add more preferences. allow for more customization. -->
+    <!-- maybe change to multiple themes later? idk what our final product will look like-->
+
+    <!-- themes. maybe we can add more later? this will do for now -->
+    <SwitchPreferenceCompat
+        android:key="dark_mode"
+        android:title="Dark Mode"
+        android:summary="Enable dark theme" />
+
+    <!-- TODO: change to separate activity rather than ListPreference
+    this will allow us to explain the algorithms in greater detail
+    with a description below each one.
+    for now, this will do for our MVP -->
+    <ListPreference
+        android:key="shuffle_algorithms"
+        android:title="Shuffling Algorithms"
+        android:entries="@array/shuffle_options"
+        android:entryValues="@array/shuffle_algs"
+        android:defaultValue="fisher_yates"
+        android:summary="Change the way your music is shuffled"/>
+</androidx.preference.PreferenceScreen>

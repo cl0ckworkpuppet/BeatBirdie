@@ -1,6 +1,8 @@
 package com.example.it391_project_beatbirdie_for_android;
 
 import android.os.Bundle;
+import android.widget.ImageButton;
+import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -30,5 +32,31 @@ public class NowPlayingActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
+
+        // functionality for buttons
+        /////////////////////////
+        // play/pause
+        ImageButton playPause = findViewById(R.id.playpause);
+        playPause.setOnClickListener(v -> {
+            // placeholder
+            // TODO: add functionality to play/pause button
+            Toast.makeText(this, "Play/Pause clicked", Toast.LENGTH_SHORT).show();
+        });
+
+        // skip
+        ImageButton skipButton = findViewById(R.id.skip);
+        skipButton.setOnClickListener(v -> {
+            // placeholder
+            // TODO: add functionality to skip button
+            Toast.makeText(this, "Skip button clicked", Toast.LENGTH_SHORT).show();
+        });
+
+        // rewind
+        ImageButton rewindButton = findViewById(R.id.rewind);
+        rewindButton.setOnClickListener(v -> {
+            // placeholder
+            // TODO: add functionality to rewind button
+            Toast.makeText(this, "Rewind button clicked", Toast.LENGTH_SHORT).show();
+        });
     }
 }

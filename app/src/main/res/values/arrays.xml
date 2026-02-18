@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="shuffle_options">
+        <item>Fisher-Yates</item>
+        <item>True Random</item>
+        <item>True Random, No Repeats</item>
+        <item>Rarely Listened</item>
+        <item>Your Top Hits</item>
+    </string-array>
+
+    <string-array name="shuffle_algs">
+        <item>fisher_yates</item>
+        <item>random</item>
+        <item>random_norepeat</item>
+        <item>least_played</item>
+        <item>most_played</item>
+    </string-array>
+
+</resources>

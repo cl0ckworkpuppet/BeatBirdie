@@ -57,7 +57,7 @@
 
         <!-- TODO: place buttons for play/pause, skip, rewind, scrub, etc-->
         <LinearLayout
-            android:layout_width="300dp"
+            android:layout_width="250dp"
             android:layout_height="30dp"
             android:layout_marginTop="25dp"
             android:gravity="center">
