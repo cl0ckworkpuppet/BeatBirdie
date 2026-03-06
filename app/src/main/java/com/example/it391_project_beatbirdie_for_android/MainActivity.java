@@ -13,7 +13,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -23,6 +22,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.app.AlertDialog;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,38 +33,44 @@ public class MainActivity extends AppCompatActivity {
     // imagebutton variable so the functions dont break lol
     private ImageButton playPause;
 
-    // function for checking whether or not permissions for file access have been granted.
-    // if permissions already granted, return true.
-    // if not yet, request.
-    // this code was written with AI assistance.
-    // specifically and especially with writing the contents of the nested if statements, and +
-    // + what to do with the Compats.
-    // please check and test appropriately.
-    private boolean checkAndRequestPermissions() {
+    // Checks if the required file permissions are granted based on Android version. Returns true if permissions are granted, false otherwise.
+    private boolean hasPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // android 13+
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_PERMISSION_CODE);
-                return false;
-            }
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED;
         } else { // android 12-
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION_CODE);
-                return false;
-            }
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         }
-        return true; // permissions granted
+    }
+
+    // Provides an option to allow access (triggers system prompt) or decline (shows disclaimer).
+    private void showPermissionRationaleDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Full File Access Required")
+                .setMessage("This app needs access to your audio files to display and play your music library. Without this permission, your songs will not be visible.")
+                .setPositiveButton("Allow Access", (dialog, which) -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_PERMISSION_CODE);
+                    } else {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION_CODE);
+                    }
+                })
+                .setNegativeButton("No Access", (dialog, which) -> {
+                    Toast.makeText(MainActivity.this, "Note: Songs won't be visible without file access.", Toast.LENGTH_LONG).show();
+                })
+                .setCancelable(false)
+                .show();
     }
 
     // function to handle permission request results.
-    // UNFINISHED. to be expanded when other functions to actually access files are written
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // TODO: file access function calls to actually use these permissions.
+                Toast.makeText(this, "Permission granted! Refreshing library...", Toast.LENGTH_SHORT).show();
             } else {
-                // TODO: explain that a music player app needs access to your music to play your music
+                Toast.makeText(this, "Permission denied. Songs will not be visible.", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -113,6 +119,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        // Check for permissions on app launch
+        if (!hasPermissions()) {
+            showPermissionRationaleDialog();
+        }
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.coordinatorLayout), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
