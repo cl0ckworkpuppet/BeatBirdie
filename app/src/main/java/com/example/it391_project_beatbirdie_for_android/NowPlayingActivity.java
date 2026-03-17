@@ -2,7 +2,7 @@ package com.example.it391_project_beatbirdie_for_android;
 
 import android.os.Bundle;
 import android.widget.ImageButton;
-import android.widget.Toast;
+import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -13,29 +13,37 @@ import androidx.appcompat.widget.Toolbar;
 public class NowPlayingActivity extends AppCompatActivity {
 
     private ImageButton playPause;
+    private TextView songTitle;
+    private TextView artistAlbum;
 
-    // functionality for back button on the toolbar
     @Override
     public boolean onSupportNavigateUp() {
         finish();
         return true;
     }
 
-    // updates the play/pause icon for the screen
-    private void updatePlayPauseIcon(ImageButton button) {
-        if (PlaybackHandler.isPaused()) {
-            button.setImageResource(android.R.drawable.ic_media_pause);
+    private void updateUI() {
+        Song currentSong = PlaybackHandler.getCurrentSong();
+        if (currentSong != null) {
+            songTitle.setText(currentSong.getTitle());
+            String details = currentSong.getArtist() + " - " + currentSong.getAlbum();
+            artistAlbum.setText(details);
+        }
+        updatePlayPauseIcon();
+    }
+
+    private void updatePlayPauseIcon() {
+        if (PlaybackHandler.isPlaying()) {
+            playPause.setImageResource(android.R.drawable.ic_media_pause);
         } else {
-            button.setImageResource(android.R.drawable.ic_media_play);
+            playPause.setImageResource(android.R.drawable.ic_media_play);
         }
     }
 
-    // allows for the updating of the play/pause button between screens
-    // to accurately represent whether the song is paused or not
     @Override
     protected void onResume() {
         super.onResume();
-        updatePlayPauseIcon(playPause);
+        updateUI();
     }
 
     @Override
@@ -43,49 +51,41 @@ public class NowPlayingActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_now_playing);
+        
+        songTitle = findViewById(R.id.songTitle);
+        artistAlbum = findViewById(R.id.artistAlbum);
+        playPause = findViewById(R.id.playpause);
+        ImageButton skipButton = findViewById(R.id.skip);
+        ImageButton rewindButton = findViewById(R.id.rewind);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // creating the toolbar onscreen
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
 
-        // functionality for buttons
-        /////////////////////////
-        // play/pause
-        playPause = findViewById(R.id.playpause);
         playPause.setOnClickListener(v -> {
-            // TODO: add functionality to play/pause button
-
-            // placeholder text
-            Toast.makeText(this, "Play/Pause clicked", Toast.LENGTH_SHORT).show();
-
-            // toggle playback
             PlaybackHandler.toggle();
-
-            // update icon
-            updatePlayPauseIcon(playPause);
+            updatePlayPauseIcon();
         });
 
-        // skip
-        ImageButton skipButton = findViewById(R.id.skip);
         skipButton.setOnClickListener(v -> {
-            // placeholder
-            // TODO: add functionality to skip button
-            Toast.makeText(this, "Skip button clicked", Toast.LENGTH_SHORT).show();
+            PlaybackHandler.next(this);
+            updateUI();
         });
 
-        // rewind
-        ImageButton rewindButton = findViewById(R.id.rewind);
         rewindButton.setOnClickListener(v -> {
-            // placeholder
-            // TODO: add functionality to rewind button
-            Toast.makeText(this, "Rewind button clicked", Toast.LENGTH_SHORT).show();
+            PlaybackHandler.previous(this);
+            updateUI();
         });
+        
+        updateUI();
     }
 }

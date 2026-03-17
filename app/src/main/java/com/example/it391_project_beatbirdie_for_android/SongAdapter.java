@@ -9,22 +9,33 @@ import java.util.List;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
 
-    // list of songs that will be displayed in the app
     private List<Song> songs;
+    private OnSongClickListener listener;
 
-    // constructor
-    public SongAdapter(List<Song> songs) {
-        this.songs = songs;
+    public interface OnSongClickListener {
+        void onSongClick(int position);
     }
 
-    // what is displayed in the viewbox
+    public SongAdapter(List<Song> songs, OnSongClickListener listener) {
+        this.songs = songs;
+        this.listener = listener;
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView title, artist;
 
-        public ViewHolder(View view) {
+        public ViewHolder(View view, final OnSongClickListener listener) {
             super(view);
             title = view.findViewById(R.id.songTitle);
             artist = view.findViewById(R.id.songArtist);
+            view.setOnClickListener(v -> {
+                if (listener != null) {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        listener.onSongClick(position);
+                    }
+                }
+            });
         }
     }
 
@@ -32,14 +43,14 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.song_box, parent, false);
-        return new ViewHolder(view);
+        return new ViewHolder(view, listener);
     }
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         Song song = songs.get(position);
-        holder.title.setText(song.title);
-        String subtitle = song.artist + " - " + song.album; // done to avoid warning for concatenation with setText()
+        holder.title.setText(song.getTitle());
+        String subtitle = song.getArtist() + " - " + song.getAlbum();
         holder.artist.setText(subtitle);
     }
 

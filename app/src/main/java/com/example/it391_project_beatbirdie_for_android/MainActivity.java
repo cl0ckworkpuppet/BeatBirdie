@@ -1,6 +1,9 @@
 package com.example.it391_project_beatbirdie_for_android;
 
+import android.content.ContentUris;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -11,10 +14,13 @@ import androidx.core.view.WindowInsetsCompat;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
 import androidx.annotation.NonNull;
@@ -26,27 +32,40 @@ import androidx.appcompat.app.AlertDialog;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Main Activity that displays the music library and a persistent play bar.
+ * Handles permission requests and scans the device for audio files.
+ */
 public class MainActivity extends AppCompatActivity {
-    // initial variable for requesting access to local storage
     private static final int REQUEST_PERMISSION_CODE = 101;
-
-    // imagebutton variable so the functions dont break lol
+    private static final String TAG = "MainActivity";
+    
     private ImageButton playPause;
+    private TextView nowPlayingTitle;
+    private TextView nowPlayingArtist;
+    private RecyclerView recyclerView;
+    private List<Song> songList = new ArrayList<>();
+    private SongAdapter adapter;
 
-    // Checks if the required file permissions are granted based on Android version. Returns true if permissions are granted, false otherwise.
+    /**
+     * Checks for appropriate storage permissions based on Android version.
+     * Android 13+ uses READ_MEDIA_AUDIO, while older versions use READ_EXTERNAL_STORAGE.
+     */
     private boolean hasPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED;
-        } else { // android 12-
+        } else {
             return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         }
     }
 
-    // Provides an option to allow access (triggers system prompt) or decline (shows disclaimer).
+    /**
+     * Explains to the user why the app needs file access before showing the system prompt.
+     */
     private void showPermissionRationaleDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Full File Access Required")
-                .setMessage("This app needs access to your audio files to display and play your music library. Without this permission, your songs will not be visible.")
+                .setMessage("This app needs access to your audio files to display and play your music library.")
                 .setPositiveButton("Allow Access", (dialog, which) -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_PERMISSION_CODE);
@@ -61,13 +80,12 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    // function to handle permission request results.
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // TODO: file access function calls to actually use these permissions.
+                loadSongs(); // Load songs immediately once permission is granted
                 Toast.makeText(this, "Permission granted! Refreshing library...", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, "Permission denied. Songs will not be visible.", Toast.LENGTH_LONG).show();
@@ -75,55 +93,118 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Scans the MediaStore database for all audio files on the device.
+     * Updates the songList and notifies the adapter of changes.
+     */
+    private void loadSongs() {
+        songList.clear();
+        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        String[] projection = {
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.DISPLAY_NAME
+        };
 
-    // basically just allows the settings menu to be created
+        // Query any audio files found in common storage locations
+        Cursor cursor = getContentResolver().query(uri, projection, null, null, MediaStore.Audio.Media.TITLE + " ASC");
+        
+        if (cursor != null) {
+            Log.d(TAG, "Query returned " + cursor.getCount() + " files.");
+            while (cursor.moveToNext()) {
+                long id = cursor.getLong(0);
+                String title = cursor.getString(1);
+                String artist = cursor.getString(2);
+                String album = cursor.getString(3);
+                String fileName = cursor.getString(4);
+                
+                // Fallback to filename if metadata is missing
+                if (title == null || title.isEmpty()) {
+                    title = fileName;
+                }
+                if (artist == null || artist.isEmpty() || artist.equals("<unknown>")) {
+                    artist = "Unknown Artist";
+                }
+                if (album == null || album.isEmpty() || album.equals("<unknown>")) {
+                    album = "Unknown Album";
+                }
+
+                Uri contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+                songList.add(new Song(title, artist, album, contentUri));
+            }
+            cursor.close();
+        }
+        
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
-    // connects settings menu button to SettingsActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_settings) {
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
             Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
             startActivity(intent);
+            return true;
+        } else if (id == R.id.action_refresh) {
+            loadSongs(); // Manually re-scan the library
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    // updates the play/pause icon for the screen
-    private void updatePlayPauseIcon(ImageButton button) {
-        if (PlaybackHandler.isPaused()) {
-            button.setImageResource(android.R.drawable.ic_media_pause);
+    /**
+     * Syncs the bottom play bar UI with the current state of PlaybackHandler.
+     */
+    private void updateNowPlayingBar() {
+        Song currentSong = PlaybackHandler.getCurrentSong();
+        if (currentSong != null) {
+            nowPlayingTitle.setText(currentSong.getTitle());
+            nowPlayingArtist.setText(currentSong.getArtist());
         } else {
-            button.setImageResource(android.R.drawable.ic_media_play);
+            nowPlayingTitle.setText("No Song Playing");
+            nowPlayingArtist.setText("");
+        }
+
+        // Update play/pause icon based on whether music is active
+        if (PlaybackHandler.isPlaying()) {
+            playPause.setImageResource(android.R.drawable.ic_media_pause);
+        } else {
+            playPause.setImageResource(android.R.drawable.ic_media_play);
         }
     }
 
-    // allows for the updating of the play/pause button between screens
-    // to accurately represent whether the song is paused or not
     @Override
     protected void onResume() {
         super.onResume();
-        updatePlayPauseIcon(playPause);
+        // Refresh library and UI state whenever the user returns to this screen
+        if (hasPermissions()) {
+            loadSongs();
+        }
+        updateNowPlayingBar();
     }
 
-    /* this is the big important function that sets up everything in the app
-    when it is launched. if you're adding something to the app, it's almost
-    certainly going to involve putting something in here. */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Check for permissions on app launch
-        if (!hasPermissions()) {
-            showPermissionRationaleDialog();
-        }
+        // Initialize playback system
+        PlaybackHandler.init(this);
+
+        nowPlayingTitle = findViewById(R.id.nowPlayingTitle);
+        nowPlayingArtist = findViewById(R.id.nowPlayingArtist);
+        playPause = findViewById(R.id.btnPlayPause);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.coordinatorLayout), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -131,59 +212,39 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // creating the recyclerview
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
+        // Setup the list display
+        recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // add songs to the list of songs
-        List<Song> songList = new ArrayList<>();
-        // PLACEHOLDER VALUES. DO NOT KEEP. REPLACE WITH PROPER USER FILES.
-        // TODO: exchange dummy values for getting local files
-        songList.add(new Song("Dummy Song 1", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 2", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 3", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 4", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 5", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 6", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 7", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 8", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 9", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 10", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 11", "Guy", "Placeholder Album"));
-        songList.add(new Song("Dummy Song 12", "Guy", "Placeholder Album"));
-
-        // connect this list to the song display
-        SongAdapter adapter = new SongAdapter(songList);
+        adapter = new SongAdapter(songList, position -> {
+            // When a song is clicked, start playing it
+            PlaybackHandler.playSong(MainActivity.this, songList, position);
+            updateNowPlayingBar();
+        });
         recyclerView.setAdapter(adapter);
 
-        // create toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
 
-        // buttons for the now playing bar
+        // Navigate to the full-screen player when bar is tapped
         LinearLayout nowPlayingBar = findViewById(R.id.nowPlayingBar);
-        playPause = findViewById(R.id.btnPlayPause);
-
-        // send user to the Now Playing screen when they click the Now Playing bar
         nowPlayingBar.setOnClickListener(v -> {
-            // see: NowPlayingActivity.java
             Intent intent = new Intent(MainActivity.this, NowPlayingActivity.class);
             startActivity(intent);
         });
 
-        // quick button to play/pause on the Now Playing bar for convenience
+        // Simple toggle button on the main screen
         playPause.setOnClickListener(v -> {
-            // TODO: add functionality to play/pause button
-
-            // placeholder text
-            Toast.makeText(this, "Play/Pause clicked", Toast.LENGTH_SHORT).show();
-
-            // toggle playback
             PlaybackHandler.toggle();
-
-            // update icon
-            updatePlayPauseIcon(playPause);
+            updateNowPlayingBar();
         });
+        
+        // Ensure permissions are handled on first launch
+        if (!hasPermissions()) {
+            showPermissionRationaleDialog();
+        }
     }
 }

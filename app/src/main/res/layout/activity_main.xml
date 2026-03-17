@@ -63,16 +63,22 @@
 
             <!-- title -->
             <TextView
-                android:text="Dummy Song 1"
+                android:id="@+id/nowPlayingTitle"
+                android:text="No Song Playing"
                 android:textStyle="bold"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"/>
 
             <!-- artist and album -->
             <TextView
-                android:text="Guy - Placeholder Album"
+                android:id="@+id/nowPlayingArtist"
+                android:text=""
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"/>
 
         </LinearLayout>
 

@@ -2,12 +2,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- this file is for the settings button in the meatball menu I had before the wrench icon
-    I don't know why the wrench icon reappeared? it's really weird?
-    but I'm too scared to delete this file so I'm keeping it.
+    <item
+        android:id="@+id/action_refresh"
+        android:title="Refresh Library"
+        android:icon="@android:drawable/ic_menu_rotate"
+        app:showAsAction="ifRoom" />
 
-    i named this menu_main and not main_menu because i don't want it to be confused for the GUI on
-    the main screen. this is the menu FOR the main screen. -->
     <item
         android:id="@+id/action_settings"
         android:title="Settings"
