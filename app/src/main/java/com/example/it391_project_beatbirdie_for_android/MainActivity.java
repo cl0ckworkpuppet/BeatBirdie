@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView nowPlayingTitle;
     private TextView nowPlayingArtist;
     private RecyclerView recyclerView;
-    private List<Song> songList = new ArrayList<>();
+    private final List<Song> songList = new ArrayList<>();
     private SongAdapter adapter;
 
     /**

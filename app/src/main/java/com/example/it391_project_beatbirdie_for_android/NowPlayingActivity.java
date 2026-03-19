@@ -1,7 +1,10 @@
 package com.example.it391_project_beatbirdie_for_android;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.ImageButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +18,9 @@ public class NowPlayingActivity extends AppCompatActivity {
     private ImageButton playPause;
     private TextView songTitle;
     private TextView artistAlbum;
+    private SeekBar scrubberBar;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable updateSeekBar;
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -28,6 +34,8 @@ public class NowPlayingActivity extends AppCompatActivity {
             songTitle.setText(currentSong.getTitle());
             String details = currentSong.getArtist() + " - " + currentSong.getAlbum();
             artistAlbum.setText(details);
+            scrubberBar.setMax(PlaybackHandler.getDuration());
+            scrubberBar.setProgress(PlaybackHandler.getCurrentPosition());
         }
         updatePlayPauseIcon();
     }
@@ -44,6 +52,13 @@ public class NowPlayingActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updateUI();
+        handler.post(updateSeekBar);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(updateSeekBar);
     }
 
     @Override
@@ -55,6 +70,7 @@ public class NowPlayingActivity extends AppCompatActivity {
         songTitle = findViewById(R.id.songTitle);
         artistAlbum = findViewById(R.id.artistAlbum);
         playPause = findViewById(R.id.playpause);
+        scrubberBar = findViewById(R.id.scrubberBar);
         ImageButton skipButton = findViewById(R.id.skip);
         ImageButton rewindButton = findViewById(R.id.rewind);
 
@@ -85,6 +101,31 @@ public class NowPlayingActivity extends AppCompatActivity {
             PlaybackHandler.previous(this);
             updateUI();
         });
+
+        scrubberBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    PlaybackHandler.seekTo(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        updateSeekBar = new Runnable() {
+            @Override
+            public void run() {
+                if (PlaybackHandler.isPlaying()) {
+                    scrubberBar.setProgress(PlaybackHandler.getCurrentPosition());
+                }
+                handler.postDelayed(this, 1000);
+            }
+        };
         
         updateUI();
     }

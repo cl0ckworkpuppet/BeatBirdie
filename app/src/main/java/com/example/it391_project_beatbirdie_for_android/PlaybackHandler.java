@@ -129,4 +129,21 @@ public class PlaybackHandler {
     public static void setAlg(String algorithm) {
         alg = algorithm;
     }
+
+    // get position of scrubber bar
+    public static int getCurrentPosition() {
+        return (mediaPlayer != null) ? mediaPlayer.getCurrentPosition() : 0;
+    }
+
+    // get duration of song
+    public static int getDuration() {
+        return (mediaPlayer != null) ? mediaPlayer.getDuration() : 0;
+    }
+
+    // seek to a specific position of song on scrubber bar
+    public static void seekTo(int msec) {
+        if (mediaPlayer != null) {
+            mediaPlayer.seekTo(msec);
+        }
+    }
 }
