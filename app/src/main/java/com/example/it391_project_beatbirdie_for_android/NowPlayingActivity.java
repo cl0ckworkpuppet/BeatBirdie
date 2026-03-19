@@ -1,20 +1,30 @@
 package com.example.it391_project_beatbirdie_for_android;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.Spinner;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.widget.Toolbar;
+import java.util.Arrays;
+import java.util.List;
 
 public class NowPlayingActivity extends AppCompatActivity {
 
     private ImageButton playPause;
     private TextView songTitle;
     private TextView artistAlbum;
+    private Spinner shuffleSpinner;
+    private boolean isInitialSelection = true;
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -30,6 +40,7 @@ public class NowPlayingActivity extends AppCompatActivity {
             artistAlbum.setText(details);
         }
         updatePlayPauseIcon();
+        updateShuffleSpinnerSelection();
     }
 
     private void updatePlayPauseIcon() {
@@ -37,6 +48,17 @@ public class NowPlayingActivity extends AppCompatActivity {
             playPause.setImageResource(android.R.drawable.ic_media_pause);
         } else {
             playPause.setImageResource(android.R.drawable.ic_media_play);
+        }
+    }
+
+    private void updateShuffleSpinnerSelection() {
+        String currentAlg = PlaybackHandler.currentAlg();
+        ArrayAdapter<String> adapter = (ArrayAdapter<String>) shuffleSpinner.getAdapter();
+        if (adapter != null) {
+            int position = adapter.getPosition(currentAlg);
+            if (position != -1) {
+                shuffleSpinner.setSelection(position, false);
+            }
         }
     }
 
@@ -57,6 +79,8 @@ public class NowPlayingActivity extends AppCompatActivity {
         playPause = findViewById(R.id.playpause);
         ImageButton skipButton = findViewById(R.id.skip);
         ImageButton rewindButton = findViewById(R.id.rewind);
+        shuffleSpinner = findViewById(R.id.shuffleSpinner);
+        Button btnViewQueue = findViewById(R.id.btnViewQueue);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -70,6 +94,8 @@ public class NowPlayingActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
+
+        setupShuffleSpinner();
 
         playPause.setOnClickListener(v -> {
             PlaybackHandler.toggle();
@@ -85,7 +111,51 @@ public class NowPlayingActivity extends AppCompatActivity {
             PlaybackHandler.previous(this);
             updateUI();
         });
+
+        btnViewQueue.setOnClickListener(v -> showQueueDialog());
         
         updateUI();
+    }
+
+    private void setupShuffleSpinner() {
+        List<String> algorithms = Arrays.asList("Default", "Fisher-Yates", "True Random, No Repeats", "Fair Play");
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, algorithms);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        shuffleSpinner.setAdapter(adapter);
+
+        shuffleSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (isInitialSelection) {
+                    isInitialSelection = false;
+                    return;
+                }
+                String selectedAlg = (String) parent.getItemAtPosition(position);
+                PlaybackHandler.setAlg(selectedAlg);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    private void showQueueDialog() {
+        List<String> queue = PlaybackHandler.getQueueTitles();
+        if (queue.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Queue")
+                    .setMessage("The queue is empty.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+
+        String[] items = queue.toArray(new String[0]);
+        new AlertDialog.Builder(this)
+                .setTitle("Current Playback Queue")
+                .setItems(items, null)
+                .setPositiveButton("Close", null)
+                .show();
     }
 }

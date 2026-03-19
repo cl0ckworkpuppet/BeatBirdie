@@ -3,8 +3,9 @@ package com.example.it391_project_beatbirdie_for_android;
 import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
-import android.net.Uri;
+import android.util.Log;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,9 +14,11 @@ import java.util.List;
  */
 public class PlaybackHandler {
 
+    private static final String TAG = "PlaybackHandler";
     private static MediaPlayer mediaPlayer;
     private static List<Song> currentPlaylist;
-    private static int currentIndex = -1;
+    private static List<Integer> playbackOrder;
+    private static int orderIndex = -1;
     private static String alg = "Default";
     private static Context appContext;
 
@@ -37,8 +40,21 @@ public class PlaybackHandler {
         if (playlist == null || index < 0 || index >= playlist.size()) return;
 
         currentPlaylist = playlist;
-        currentIndex = index;
-        Song song = playlist.get(index);
+        
+        // When a specific song is selected, we regenerate the shuffle order
+        // and ensure the selected song is at the current position.
+        generatePlaybackOrder(index);
+        
+        playCurrent(context);
+    }
+
+    private static void playCurrent(Context context) {
+        if (currentPlaylist == null || playbackOrder == null || orderIndex < 0 || orderIndex >= playbackOrder.size()) return;
+
+        int songIndex = playbackOrder.get(orderIndex);
+        Song song = currentPlaylist.get(songIndex);
+
+        Log.d(TAG, "Playing song: " + song.getTitle() + " (Order index: " + orderIndex + ", Song index: " + songIndex + ")");
 
         // Stop and release previous player to free up system resources
         if (mediaPlayer != null) {
@@ -68,6 +84,85 @@ public class PlaybackHandler {
         }
     }
 
+    private static void generatePlaybackOrder(int startingSongIndex) {
+        if (currentPlaylist == null) return;
+        
+        int size = currentPlaylist.size();
+        List<Integer> newOrder;
+
+        switch (alg) {
+            case "Fisher-Yates":
+                newOrder = ShuffleManager.fisherYatesShuffle(size);
+                break;
+            case "True Random, No Repeats":
+                newOrder = ShuffleManager.trueRandomNoRepeats(size);
+                break;
+            case "Fair Play":
+                newOrder = ShuffleManager.fairPlayShuffle(currentPlaylist);
+                break;
+            default:
+                newOrder = new ArrayList<>();
+                for (int i = 0; i < size; i++) {
+                    newOrder.add(i);
+                }
+                break;
+        }
+
+        // If a specific song was requested to start, move it to the front or find it
+        if (startingSongIndex != -1) {
+            int posInOrder = -1;
+            for (int i = 0; i < newOrder.size(); i++) {
+                if (newOrder.get(i) == startingSongIndex) {
+                    posInOrder = i;
+                    break;
+                }
+            }
+            
+            if (posInOrder != -1) {
+                if (alg.equals("Default")) {
+                    orderIndex = startingSongIndex;
+                } else {
+                    orderIndex = posInOrder;
+                }
+            }
+        } else {
+            orderIndex = 0;
+        }
+        
+        playbackOrder = newOrder;
+        logPlaybackOrder();
+    }
+
+    private static void logPlaybackOrder() {
+        if (playbackOrder == null || currentPlaylist == null) return;
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append("Shuffle Applied: ").append(alg).append("\n");
+        sb.append("New Playback Order (Song Titles):\n");
+        for (int i = 0; i < playbackOrder.size(); i++) {
+            int songIndex = playbackOrder.get(i);
+            String title = currentPlaylist.get(songIndex).getTitle();
+            sb.append(i + 1).append(". ").append(title);
+            if (i == orderIndex) {
+                sb.append(" <--- CURRENTLY PLAYING");
+            }
+            sb.append("\n");
+        }
+        Log.i(TAG, sb.toString());
+    }
+
+    public static List<String> getQueueTitles() {
+        List<String> titles = new ArrayList<>();
+        if (playbackOrder != null && currentPlaylist != null) {
+            for (int i = 0; i < playbackOrder.size(); i++) {
+                int songIndex = playbackOrder.get(i);
+                String prefix = (i == orderIndex) ? "▶ " : "";
+                titles.add(prefix + currentPlaylist.get(songIndex).getTitle());
+            }
+        }
+        return titles;
+    }
+
     /**
      * Toggles between play and pause.
      */
@@ -84,24 +179,24 @@ public class PlaybackHandler {
      * Skips to the next song in the playlist.
      */
     public static void next(Context context) {
-        if (currentPlaylist == null || currentPlaylist.isEmpty()) return;
-        currentIndex = (currentIndex + 1) % currentPlaylist.size();
-        playSong(context, currentPlaylist, currentIndex);
+        if (currentPlaylist == null || playbackOrder == null || playbackOrder.isEmpty()) return;
+        orderIndex = (orderIndex + 1) % playbackOrder.size();
+        playCurrent(context);
     }
 
     /**
      * Rewinds to the start of the song or skips to the previous track.
      */
     public static void previous(Context context) {
-        if (currentPlaylist == null || currentPlaylist.isEmpty()) return;
+        if (currentPlaylist == null || playbackOrder == null || playbackOrder.isEmpty()) return;
         
         // If the song is more than 5 seconds in, restart the current song
         if (mediaPlayer != null && mediaPlayer.getCurrentPosition() > 5000) {
             mediaPlayer.seekTo(0);
         } else {
             // Otherwise go to previous track
-            currentIndex = (currentIndex - 1 + currentPlaylist.size()) % currentPlaylist.size();
-            playSong(context, currentPlaylist, currentIndex);
+            orderIndex = (orderIndex - 1 + playbackOrder.size()) % playbackOrder.size();
+            playCurrent(context);
         }
     }
 
@@ -116,8 +211,9 @@ public class PlaybackHandler {
      * @return The Song object currently loaded.
      */
     public static Song getCurrentSong() {
-        if (currentPlaylist != null && currentIndex >= 0 && currentIndex < currentPlaylist.size()) {
-            return currentPlaylist.get(currentIndex);
+        if (currentPlaylist != null && playbackOrder != null && orderIndex >= 0 && orderIndex < playbackOrder.size()) {
+            int songIndex = playbackOrder.get(orderIndex);
+            return currentPlaylist.get(songIndex);
         }
         return null;
     }
@@ -128,5 +224,13 @@ public class PlaybackHandler {
 
     public static void setAlg(String algorithm) {
         alg = algorithm;
+        // If music is already playing, we might want to reshuffle from the current song
+        if (currentPlaylist != null) {
+            int currentSongIndex = -1;
+            if (playbackOrder != null && orderIndex >= 0 && orderIndex < playbackOrder.size()) {
+                currentSongIndex = playbackOrder.get(orderIndex);
+            }
+            generatePlaybackOrder(currentSongIndex);
+        }
     }
 }
