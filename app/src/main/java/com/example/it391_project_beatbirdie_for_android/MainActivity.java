@@ -36,7 +36,7 @@ import java.util.List;
  * Main Activity that displays the music library and a persistent play bar.
  * Handles permission requests and scans the device for audio files.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements PlaybackHandler.PlaybackListener {
     private static final int REQUEST_PERMISSION_CODE = 101;
     private static final String TAG = "MainActivity";
     
@@ -46,6 +46,11 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private final List<Song> songList = new ArrayList<>();
     private SongAdapter adapter;
+
+    @Override
+    public void onSongChanged() {
+        runOnUiThread(this::updateNowPlayingBar);
+    }
 
     /**
      * Checks for appropriate storage permissions based on Android version.
@@ -186,11 +191,18 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        PlaybackHandler.addListener(this);
         // Refresh library and UI state whenever the user returns to this screen
         if (hasPermissions()) {
             loadSongs();
         }
         updateNowPlayingBar();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        PlaybackHandler.removeListener(this);
     }
 
     @Override

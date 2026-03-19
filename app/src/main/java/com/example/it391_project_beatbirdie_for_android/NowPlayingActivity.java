@@ -13,7 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.widget.Toolbar;
 
-public class NowPlayingActivity extends AppCompatActivity {
+public class NowPlayingActivity extends AppCompatActivity implements PlaybackHandler.PlaybackListener {
 
     private ImageButton playPause;
     private TextView songTitle;
@@ -28,14 +28,18 @@ public class NowPlayingActivity extends AppCompatActivity {
         return true;
     }
 
+    @Override
+    public void onSongChanged() {
+        runOnUiThread(this::updateUI);
+    }
+
     private void updateUI() {
         Song currentSong = PlaybackHandler.getCurrentSong();
         if (currentSong != null) {
             songTitle.setText(currentSong.getTitle());
             String details = currentSong.getArtist() + " - " + currentSong.getAlbum();
             artistAlbum.setText(details);
-            
-            // Sync SeekBar with song duration and current position
+
             scrubberBar.setMax(PlaybackHandler.getDuration());
             scrubberBar.setProgress(PlaybackHandler.getCurrentPosition());
         }
@@ -53,6 +57,7 @@ public class NowPlayingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        PlaybackHandler.addListener(this);
         updateUI();
         // Start the periodic update
         handler.post(updateSeekBar);
@@ -61,7 +66,7 @@ public class NowPlayingActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        // Stop the periodic update to save resources
+        PlaybackHandler.removeListener(this);
         handler.removeCallbacks(updateSeekBar);
     }
 

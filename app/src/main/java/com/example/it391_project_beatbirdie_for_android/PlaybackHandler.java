@@ -22,6 +22,28 @@ public class PlaybackHandler {
     private static String alg = "Default";
     private static Context appContext;
 
+    public interface PlaybackListener {
+        void onSongChanged();
+    }
+
+    private static final List<PlaybackListener> listeners = new ArrayList<>();
+
+    public static void addListener(PlaybackListener listener) {
+        if (!listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public static void removeListener(PlaybackListener listener) {
+        listeners.remove(listener);
+    }
+
+    private static void notifySongChanged() {
+        for (PlaybackListener listener : new ArrayList<>(listeners)) {
+            listener.onSongChanged();
+        }
+    }
+
     /**
      * Initializes the handler with the application context.
      * @param context Activity or Application context.
@@ -76,6 +98,7 @@ public class PlaybackHandler {
             mediaPlayer.setDataSource(context, song.getUri());
             mediaPlayer.prepare(); // Synchronous prepare for local files
             mediaPlayer.start();
+            notifySongChanged();
             
             // Automatically play next song when current one finishes
             mediaPlayer.setOnCompletionListener(mp -> next(context));
