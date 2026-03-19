@@ -54,6 +54,10 @@ public class NowPlayingActivity extends AppCompatActivity {
             String details = artist + " - " + album;
             artistAlbum.setText(details);
         }
+        else {
+            songTitle.setText("No Song Playing");
+            artistAlbum.setText("");
+        }
         updatePlayPauseIcon();
         updateShuffleSpinnerSelection();
     }
