@@ -35,8 +35,23 @@ public class NowPlayingActivity extends AppCompatActivity {
     private void updateUI() {
         Song currentSong = PlaybackHandler.getCurrentSong();
         if (currentSong != null) {
-            songTitle.setText(currentSong.getTitle());
-            String details = currentSong.getArtist() + " - " + currentSong.getAlbum();
+            String title = currentSong.getTitle();
+            if (title == null || title.isEmpty()) {
+                title = "Unknown Title";
+            }
+            songTitle.setText(title);
+
+            String artist = currentSong.getArtist();
+            if (artist == null || artist.isEmpty()) {
+                artist = "Unknown Artist";
+            }
+
+            String album = currentSong.getAlbum();
+            if (album == null || album.isEmpty()) {
+                album = "Unknown Album";
+            }
+
+            String details = artist + " - " + album;
             artistAlbum.setText(details);
         }
         updatePlayPauseIcon();
