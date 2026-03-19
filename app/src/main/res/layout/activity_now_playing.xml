@@ -25,13 +25,14 @@
 
     <!-- song details -->
     <LinearLayout
-        android:layout_height="600dp"
+        android:layout_height="0dp"
         android:layout_width="0dp"
         android:orientation="vertical"
         android:gravity="center_horizontal|center_vertical"
         app:layout_constraintTop_toBottomOf="@id/appbar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <!-- album cover -->
         <ImageView
@@ -44,28 +45,30 @@
         <TextView
             android:id="@+id/songTitle"
             android:text="Dummy Song 1"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
             android:layout_width="200dp"
             android:gravity="center"
-            android:textSize="10pt"/>
+            android:textSize="20sp"
+            android:layout_marginTop="16dp"/>
 
         <!-- song artist and album name -->
         <TextView
             android:id="@+id/artistAlbum"
             android:text="Guy - Placeholder Album 1"
-            android:layout_height="25dp"
+            android:layout_height="wrap_content"
             android:layout_width="200dp"
             android:gravity="center"
-            android:textSize="6pt"/>
+            android:textSize="14sp"
+            android:layout_marginTop="8dp"/>
 
-        <!-- TODO: place buttons for play/pause, skip, rewind, scrub, etc-->
+        <!-- scrubber bar -->
         <LinearLayout
-            android:layout_width="250dp"
-            android:layout_height="30dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="25dp"
+            android:paddingHorizontal="32dp"
             android:gravity="center">
 
-            <!-- scrubber bar (allows you to traverse throughout the song) -->
             <SeekBar
                 android:id="@+id/scrubberBar"
                 android:layout_width="match_parent"
@@ -74,34 +77,60 @@
                 android:progress="0"/>
         </LinearLayout>
 
+        <!-- Controls -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginTop="5dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:gravity="center">
 
-            <!-- rewind button -->
             <ImageButton
                 android:id="@+id/rewind"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_media_rew"/>
 
-            <!-- play/pause button -->
-            <!-- TODO: change play to pause icon if song is playing and vice-versa -->
             <ImageButton
                 android:id="@+id/playpause"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginHorizontal="24dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_media_play"/>
 
-            <!-- skip button -->
             <ImageButton
                 android:id="@+id/skip"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_media_ff"/>
         </LinearLayout>
+
+        <Button
+            android:id="@+id/btnViewQueue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="View Shuffled Queue"
+            style="@style/Widget.MaterialComponents.Button.TextButton"/>
+
+        <!-- Shuffle Algorithm Choice -->
+        <TextView
+            android:id="@+id/shuffleLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Shuffle Algorithm:"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"/>
+
+        <Spinner
+            android:id="@+id/shuffleSpinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:padding="8dp"/>
 
     </LinearLayout>
 

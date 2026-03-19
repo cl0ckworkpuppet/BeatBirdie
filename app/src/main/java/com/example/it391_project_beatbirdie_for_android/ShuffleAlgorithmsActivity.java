@@ -33,8 +33,8 @@ public class ShuffleAlgorithmsActivity extends AppCompatActivity {
 
         List<ShuffleAlgorithm> algList = new ArrayList<>();
         algList.add(new ShuffleAlgorithm("Fisher-Yates", "Walks through your music list and swaps each song with another song, chosen randomly."));
-        algList.add(new ShuffleAlgorithm("True Random", "Plays a randomly selected song after each song is played."));
-        algList.add(new ShuffleAlgorithm("True Random, No Repeats", "Gives each song a random spot in line, and then plays them in that order. May be slower for larger libraries."));
+        algList.add(new ShuffleAlgorithm("True Random, No Repeats", "Gives each song a random spot in line, and then plays them in that order."));
+        algList.add(new ShuffleAlgorithm("Fair Play", "Ensures a balanced variety by preventing the same artist or album from playing too frequently in a row."));
 
         ShuffleAlgorithmAdapter adapter = new ShuffleAlgorithmAdapter(algList, this);
         recyclerView.setAdapter(adapter);
