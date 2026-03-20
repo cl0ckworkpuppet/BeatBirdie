@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
                 if (artist == null || artist.isEmpty() || artist.equals("<unknown>")) {
                     artist = "Unknown Artist";
                 }
-                if (album == null || album.isEmpty() || album.equals("<unknown>")) {
+                if (album == null || album.isEmpty() || album.equals("<unknown>") || album.equalsIgnoreCase("download")) {
                     album = "Unknown Album";
                 }
 
