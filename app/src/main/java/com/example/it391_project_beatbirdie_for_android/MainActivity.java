@@ -159,6 +159,16 @@ public class MainActivity extends AppCompatActivity {
             loadSongs(); // Manually re-scan the library
             return true;
         }
+        else if (id == R.id.action_sort_title) {
+            songList.sort((s1, s2) -> s1.getArtist().compareToIgnoreCase(s2.getTitle()));
+            adapter.notifyDataSetChanged();
+            return true;
+        }
+        else if (id == R.id.action_sort_artist) {
+            songList.sort((s1,s2) -> s1.getArtist().compareToIgnoreCase(s2.getArtist()));
+            adapter.notifyDataSetChanged();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 

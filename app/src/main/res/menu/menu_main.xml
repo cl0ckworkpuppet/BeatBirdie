@@ -13,5 +13,11 @@
         android:title="Settings"
         android:icon="@android:drawable/ic_menu_preferences"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_sort_title"
+        android:title="Sort by Title" />
+    <item
+        android:id="@+id/action_sort_artist"
+        android:title="Sort by Artist" />
 
 </menu>
