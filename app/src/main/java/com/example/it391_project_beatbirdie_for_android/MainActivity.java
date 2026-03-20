@@ -165,13 +165,17 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             return true;
         }
         else if (id == R.id.action_sort_title) {
-            songList.sort((s1, s2) -> s1.getArtist().compareToIgnoreCase(s2.getTitle()));
-            adapter.notifyDataSetChanged();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                songList.sort((s1, s2) -> s1.getTitle().compareToIgnoreCase(s2.getTitle()));
+                adapter.notifyDataSetChanged();
+            }
             return true;
         }
         else if (id == R.id.action_sort_artist) {
-            songList.sort((s1,s2) -> s1.getArtist().compareToIgnoreCase(s2.getArtist()));
-            adapter.notifyDataSetChanged();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                songList.sort((s1, s2) -> s1.getArtist().compareToIgnoreCase(s2.getArtist()));
+                adapter.notifyDataSetChanged();
+            }
             return true;
         }
         return super.onOptionsItemSelected(item);
