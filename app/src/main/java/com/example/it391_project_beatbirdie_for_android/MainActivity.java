@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 if (artist == null || artist.isEmpty() || artist.equals("<unknown>")) {
                     artist = "Unknown Artist";
                 }
-                if (album == null || album.isEmpty() || album.equals("<unknown>")) {
+                if (album == null || album.isEmpty() || album.equals("<unknown>") || album.equalsIgnoreCase("download")) {
                     album = "Unknown Album";
                 }
 
@@ -162,6 +162,16 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             return true;
         } else if (id == R.id.action_refresh) {
             loadSongs(); // Manually re-scan the library
+            return true;
+        }
+        else if (id == R.id.action_sort_title) {
+            songList.sort((s1, s2) -> s1.getArtist().compareToIgnoreCase(s2.getTitle()));
+            adapter.notifyDataSetChanged();
+            return true;
+        }
+        else if (id == R.id.action_sort_artist) {
+            songList.sort((s1,s2) -> s1.getArtist().compareToIgnoreCase(s2.getArtist()));
+            adapter.notifyDataSetChanged();
             return true;
         }
         return super.onOptionsItemSelected(item);
