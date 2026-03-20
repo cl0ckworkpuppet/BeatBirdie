@@ -124,7 +124,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 String artist = cursor.getString(2);
                 String album = cursor.getString(3);
                 String fileName = cursor.getString(4);
-                
+
+
                 // Fallback to filename if metadata is missing
                 if (title == null || title.isEmpty()) {
                     title = fileName;
