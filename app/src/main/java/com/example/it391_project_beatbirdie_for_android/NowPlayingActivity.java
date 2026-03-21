@@ -3,21 +3,31 @@ package com.example.it391_project_beatbirdie_for_android;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.widget.Toolbar;
+import com.bumptech.glide.Glide;
+import java.util.List;
 
 public class NowPlayingActivity extends AppCompatActivity implements PlaybackHandler.PlaybackListener {
 
     private ImageButton playPause;
     private TextView songTitle;
     private TextView artistAlbum;
+    private ImageView albumCover;
     private SeekBar scrubberBar;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable updateSeekBar;
@@ -39,7 +49,13 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             songTitle.setText(currentSong.getTitle());
             String details = currentSong.getArtist() + " - " + currentSong.getAlbum();
             artistAlbum.setText(details);
-
+            
+            Glide.with(this)
+                .load(currentSong.getAlbumArtUri())
+                .placeholder(R.drawable.ic_launcher_foreground)
+                .into(albumCover);
+            
+            // Sync SeekBar with song duration and current position
             scrubberBar.setMax(PlaybackHandler.getDuration());
             scrubberBar.setProgress(PlaybackHandler.getCurrentPosition());
         }
@@ -67,6 +83,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     protected void onPause() {
         super.onPause();
         PlaybackHandler.removeListener(this);
+        // Stop the periodic update to save resources
         handler.removeCallbacks(updateSeekBar);
     }
 
@@ -78,10 +95,13 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         
         songTitle = findViewById(R.id.songTitle);
         artistAlbum = findViewById(R.id.artistAlbum);
+        albumCover = findViewById(R.id.albumCover);
         playPause = findViewById(R.id.playpause);
         scrubberBar = findViewById(R.id.scrubberBar);
         ImageButton skipButton = findViewById(R.id.skip);
         ImageButton rewindButton = findViewById(R.id.rewind);
+        Spinner shuffleSpinner = findViewById(R.id.shuffleSpinner);
+        Button btnViewQueue = findViewById(R.id.btnViewQueue);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -95,6 +115,47 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
+
+        // --- Shuffle Spinner Setup ---
+        String[] algorithms = {"Play in Order", "Fisher-Yates", "True Random, No Repeats", "Fair Play"};
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this, 
+                android.R.layout.simple_spinner_item, algorithms);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        shuffleSpinner.setAdapter(spinnerAdapter);
+
+        // Sync spinner with current PlaybackHandler state
+        for (int i = 0; i < algorithms.length; i++) {
+            if (algorithms[i].equals(PlaybackHandler.currentAlg())) {
+                shuffleSpinner.setSelection(i);
+                break;
+            }
+        }
+
+        shuffleSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                PlaybackHandler.setAlg(algorithms[position]);
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        // --- View Queue Setup ---
+        btnViewQueue.setOnClickListener(v -> {
+            List<String> queue = PlaybackHandler.getQueueTitles();
+            if (queue.isEmpty()) return;
+
+            StringBuilder sb = new StringBuilder();
+            for (String title : queue) {
+                sb.append(title).append("\n");
+            }
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Current Playback Order (" + PlaybackHandler.currentAlg() + ")")
+                    .setMessage(sb.toString())
+                    .setPositiveButton("Close", null)
+                    .show();
+        });
 
         playPause.setOnClickListener(v -> {
             PlaybackHandler.toggle();

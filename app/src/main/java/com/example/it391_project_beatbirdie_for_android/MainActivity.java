@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,6 +30,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.app.AlertDialog;
+import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
     private ImageButton playPause;
     private TextView nowPlayingTitle;
     private TextView nowPlayingArtist;
-    private RecyclerView recyclerView;
+    private ImageView nowPlayingCover;
     private final List<Song> songList = new ArrayList<>();
     private SongAdapter adapter;
 
@@ -78,9 +80,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                         ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION_CODE);
                     }
                 })
-                .setNegativeButton("No Access", (dialog, which) -> {
-                    Toast.makeText(MainActivity.this, "Note: Songs won't be visible without file access.", Toast.LENGTH_LONG).show();
-                })
+                .setNegativeButton("No Access", (dialog, which) -> Toast.makeText(MainActivity.this, "Note: Songs won't be visible without file access.", Toast.LENGTH_LONG).show())
                 .setCancelable(false)
                 .show();
     }
@@ -110,7 +110,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ARTIST,
                 MediaStore.Audio.Media.ALBUM,
-                MediaStore.Audio.Media.DISPLAY_NAME
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.ALBUM_ID
         };
 
         // Query any audio files found in common storage locations
@@ -124,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 String artist = cursor.getString(2);
                 String album = cursor.getString(3);
                 String fileName = cursor.getString(4);
-
+                long albumId = cursor.getLong(5);
 
                 // Fallback to filename if metadata is missing
                 if (title == null || title.isEmpty()) {
@@ -138,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 }
 
                 Uri contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-                songList.add(new Song(title, artist, album, contentUri));
+                songList.add(new Song(title, artist, album, contentUri, albumId));
             }
             cursor.close();
         }
@@ -166,15 +167,15 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             return true;
         }
         else if (id == R.id.action_sort_title) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                songList.sort((s1, s2) -> s1.getTitle().compareToIgnoreCase(s2.getTitle()));
+            songList.sort((s1, s2) -> s1.getTitle().compareToIgnoreCase(s2.getTitle()));
+            if (adapter != null) {
                 adapter.notifyDataSetChanged();
             }
             return true;
         }
         else if (id == R.id.action_sort_artist) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                songList.sort((s1, s2) -> s1.getArtist().compareToIgnoreCase(s2.getArtist()));
+            songList.sort((s1, s2) -> s1.getArtist().compareToIgnoreCase(s2.getArtist()));
+            if (adapter != null) {
                 adapter.notifyDataSetChanged();
             }
             return true;
@@ -190,9 +191,14 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         if (currentSong != null) {
             nowPlayingTitle.setText(currentSong.getTitle());
             nowPlayingArtist.setText(currentSong.getArtist());
+            Glide.with(this)
+                .load(currentSong.getAlbumArtUri())
+                .placeholder(R.drawable.ic_launcher_foreground)
+                .into(nowPlayingCover);
         } else {
             nowPlayingTitle.setText("No Song Playing");
             nowPlayingArtist.setText("");
+            nowPlayingCover.setImageResource(R.drawable.ic_launcher_foreground);
         }
 
         // Update play/pause icon based on whether music is active
@@ -231,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
 
         nowPlayingTitle = findViewById(R.id.nowPlayingTitle);
         nowPlayingArtist = findViewById(R.id.nowPlayingArtist);
+        nowPlayingCover = findViewById(R.id.nowPlayingCover);
         playPause = findViewById(R.id.btnPlayPause);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.coordinatorLayout), (v, insets) -> {
@@ -240,7 +247,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         });
 
         // Setup the list display
-        recyclerView = findViewById(R.id.recyclerView);
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         adapter = new SongAdapter(songList, position -> {
