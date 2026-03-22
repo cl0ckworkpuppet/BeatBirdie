@@ -44,7 +44,7 @@
         <!-- song title -->
         <TextView
             android:id="@+id/songTitle"
-            android:text="Dummy Song 1"
+            android:text="Unknown Song"
             android:layout_height="wrap_content"
             android:layout_width="200dp"
             android:gravity="center"
@@ -54,7 +54,7 @@
         <!-- song artist and album name -->
         <TextView
             android:id="@+id/artistAlbum"
-            android:text="Guy - Placeholder Album 1"
+            android:text="Unknown Artist - Unknown Album"
             android:layout_height="wrap_content"
             android:layout_width="200dp"
             android:gravity="center"
@@ -89,7 +89,8 @@
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_media_rew"/>
+                android:src="@android:drawable/ic_media_rew"
+                android:contentDescription="Rewind"/>
 
             <ImageButton
                 android:id="@+id/playpause"
@@ -97,14 +98,16 @@
                 android:layout_height="64dp"
                 android:layout_marginHorizontal="24dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_media_play"/>
+                android:src="@android:drawable/ic_media_play"
+                android:contentDescription="Play or Pause"/>
 
             <ImageButton
                 android:id="@+id/skip"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_media_ff"/>
+                android:src="@android:drawable/ic_media_ff"
+                android:contentDescription="Skip"/>
         </LinearLayout>
 
         <Button
@@ -115,22 +118,64 @@
             android:text="View Shuffled Queue"
             style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
-        <!-- Shuffle Algorithm Choice -->
-        <TextView
-            android:id="@+id/shuffleLabel"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Shuffle Algorithm:"
-            android:textSize="12sp"
-            android:textColor="@android:color/darker_gray"/>
+            android:layout_marginHorizontal="32dp"
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <Spinner
-            android:id="@+id/shuffleSpinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:padding="8dp"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+        <!-- Shuffle Algorithm Choice -->
+                <TextView
+                    android:id="@+id/shuffleLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Shuffle Algorithm:"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/darker_gray"/>
+
+                <Spinner
+                    android:id="@+id/shuffleSpinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:padding="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="end">
+
+                <!-- repeat / loop song yes or no -->
+
+                <TextView
+                    android:id="@+id/repeatLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Repeat:"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/darker_gray"/>
+
+                <CheckBox
+                    android:id="@+id/repeatCheckbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
 
     </LinearLayout>
 

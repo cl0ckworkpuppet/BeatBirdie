@@ -20,6 +20,7 @@ public class PlaybackHandler {
     private static List<Integer> playbackOrder;
     private static int orderIndex = -1;
     private static String alg = "Default";
+    private static boolean isLooping = false;
     private static Context appContext;
 
     public interface PlaybackListener {
@@ -85,6 +86,7 @@ public class PlaybackHandler {
         }
 
         mediaPlayer = new MediaPlayer();
+        mediaPlayer.setLooping(isLooping);
         
         // Set attributes for music playback
         mediaPlayer.setAudioAttributes(
@@ -255,6 +257,17 @@ public class PlaybackHandler {
             }
             generatePlaybackOrder(currentSongIndex);
         }
+    }
+
+    public static void setLooping(boolean looping) {
+        isLooping = looping;
+        if (mediaPlayer != null) {
+            mediaPlayer.setLooping(isLooping);
+        }
+    }
+
+    public static boolean isLooping() {
+        return isLooping;
     }
 
     // get position of scrubber bar

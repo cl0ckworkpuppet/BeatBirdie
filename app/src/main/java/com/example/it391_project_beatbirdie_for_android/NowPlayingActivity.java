@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -29,6 +30,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     private TextView artistAlbum;
     private ImageView albumCover;
     private SeekBar scrubberBar;
+    private CheckBox repeatCheckbox;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable updateSeekBar;
 
@@ -77,6 +79,9 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         updateUI();
         // Start the periodic update
         handler.post(updateSeekBar);
+        if (repeatCheckbox != null) {
+            repeatCheckbox.setChecked(PlaybackHandler.isLooping());
+        }
     }
 
     @Override
@@ -98,6 +103,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         albumCover = findViewById(R.id.albumCover);
         playPause = findViewById(R.id.playpause);
         scrubberBar = findViewById(R.id.scrubberBar);
+        repeatCheckbox = findViewById(R.id.repeatCheckbox);
         ImageButton skipButton = findViewById(R.id.skip);
         ImageButton rewindButton = findViewById(R.id.rewind);
         Spinner shuffleSpinner = findViewById(R.id.shuffleSpinner);
@@ -138,6 +144,12 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        // repeat checkbox (if checked, song loops)
+        repeatCheckbox.setChecked(PlaybackHandler.isLooping());
+        repeatCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            PlaybackHandler.setLooping(isChecked);
         });
 
         // --- View Queue Setup ---
