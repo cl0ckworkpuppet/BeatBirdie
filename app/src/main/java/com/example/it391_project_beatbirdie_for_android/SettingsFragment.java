@@ -1,22 +1,66 @@
 package com.example.it391_project_beatbirdie_for_android;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
+import androidx.preference.SwitchPreferenceCompat;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+        // for some reason the app INSISTS on making dark mode a boolean still. this is a fix for that
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        Object value = sharedPreferences.getAll().get("dark_mode");
+        if (value instanceof Boolean) {
+            sharedPreferences.edit().remove("dark_mode").apply();
+        }
+
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
         Preference shufflePref = findPreference("shuffle_algorithms");
+        if (shufflePref != null) {
+            shufflePref.setOnPreferenceClickListener(preference -> {
+                Intent intent = new Intent(getContext(), ShuffleAlgorithmsActivity.class);
+                startActivity(intent);
+                return true;
+            });
+        }
 
-        shufflePref.setOnPreferenceClickListener(preference -> {
-            Intent intent = new Intent(getContext(), ShuffleAlgorithmsActivity.class);
-            startActivity(intent);
-            return true;
-        });
+        ListPreference themePref = findPreference("dark_mode");
+        if (themePref != null) {
+            themePref.setOnPreferenceChangeListener((preference, newValue) -> {
+                String themeValue = (String) newValue;
+                applyTheme(themeValue);
+                return true;
+            });
+        }
+
+        SwitchPreferenceCompat keepScreenPref = findPreference("lock_screen_on");
+        if (keepScreenPref != null) {
+            keepScreenPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                return true;
+            });
+        }
+    }
+
+    private void applyTheme(String themeValue) {
+        switch (themeValue) {
+            case "light":
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case "dark":
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case "default":
+            default:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                break;
+        }
     }
 }

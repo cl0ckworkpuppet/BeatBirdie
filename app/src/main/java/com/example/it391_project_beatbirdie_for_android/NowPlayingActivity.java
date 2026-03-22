@@ -1,9 +1,11 @@
 package com.example.it391_project_beatbirdie_for_android;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -20,6 +22,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.widget.Toolbar;
+import androidx.preference.PreferenceManager;
 import com.bumptech.glide.Glide;
 import java.util.List;
 
@@ -72,9 +75,20 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         }
     }
 
+    private void applyKeepScreenOn() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean keepOn = prefs.getBoolean("lock_screen_on", false);
+        if (keepOn) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        applyKeepScreenOn();
         PlaybackHandler.addListener(this);
         updateUI();
         // Start the periodic update
