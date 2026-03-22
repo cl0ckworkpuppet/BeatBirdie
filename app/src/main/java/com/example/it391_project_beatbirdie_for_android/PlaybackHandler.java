@@ -1,8 +1,11 @@
 package com.example.it391_project_beatbirdie_for_android;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
+import android.os.Build;
+import android.os.PowerManager;
 import android.util.Log;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,11 +66,10 @@ public class PlaybackHandler {
         if (playlist == null || index < 0 || index >= playlist.size()) return;
 
         currentPlaylist = playlist;
-        
+
         // When a specific song is selected, we regenerate the shuffle order
         // and ensure the selected song is at the current position.
         generatePlaybackOrder(index);
-        
         playCurrent(context);
     }
 
@@ -79,7 +81,6 @@ public class PlaybackHandler {
 
         Log.d(TAG, "Playing song: " + song.getTitle() + " (Order index: " + orderIndex + ", Song index: " + songIndex + ")");
 
-        // Stop and release previous player to free up system resources
         if (mediaPlayer != null) {
             mediaPlayer.stop();
             mediaPlayer.release();
@@ -88,7 +89,9 @@ public class PlaybackHandler {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setLooping(isLooping);
         
-        // Set attributes for music playback
+        // Keep CPU awake during playback
+        mediaPlayer.setWakeMode(appContext, PowerManager.PARTIAL_WAKE_LOCK);
+        
         mediaPlayer.setAudioAttributes(
                 new AudioAttributes.Builder()
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -97,15 +100,28 @@ public class PlaybackHandler {
         );
 
         try {
-            mediaPlayer.setDataSource(context, song.getUri());
-            mediaPlayer.prepare(); // Synchronous prepare for local files
+            mediaPlayer.setDataSource(appContext, song.getUri());
+            mediaPlayer.prepare(); 
             mediaPlayer.start();
             notifySongChanged();
             
+            // Refresh/Start the foreground service
+            startMusicService(appContext);
+
             // Automatically play next song when current one finishes
-            mediaPlayer.setOnCompletionListener(mp -> next(context));
+            mediaPlayer.setOnCompletionListener(mp -> next(appContext));
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void startMusicService(Context context) {
+        if (context == null) return;
+        Intent serviceIntent = new Intent(context, MusicService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent);
+        } else {
+            context.startService(serviceIntent);
         }
     }
 
@@ -155,25 +171,6 @@ public class PlaybackHandler {
         }
         
         playbackOrder = newOrder;
-        logPlaybackOrder();
-    }
-
-    private static void logPlaybackOrder() {
-        if (playbackOrder == null || currentPlaylist == null) return;
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append("Shuffle Applied: ").append(alg).append("\n");
-        sb.append("New Playback Order (Song Titles):\n");
-        for (int i = 0; i < playbackOrder.size(); i++) {
-            int songIndex = playbackOrder.get(i);
-            String title = currentPlaylist.get(songIndex).getTitle();
-            sb.append(i + 1).append(". ").append(title);
-            if (i == orderIndex) {
-                sb.append(" <--- CURRENTLY PLAYING");
-            }
-            sb.append("\n");
-        }
-        Log.i(TAG, sb.toString());
     }
 
     public static List<String> getQueueTitles() {
@@ -197,6 +194,7 @@ public class PlaybackHandler {
             mediaPlayer.pause();
         } else {
             mediaPlayer.start();
+            startMusicService(appContext);
         }
     }
 
@@ -206,7 +204,7 @@ public class PlaybackHandler {
     public static void next(Context context) {
         if (currentPlaylist == null || playbackOrder == null || playbackOrder.isEmpty()) return;
         orderIndex = (orderIndex + 1) % playbackOrder.size();
-        playCurrent(context);
+        playCurrent(context != null ? context : appContext);
     }
 
     /**
@@ -249,7 +247,6 @@ public class PlaybackHandler {
 
     public static void setAlg(String algorithm) {
         alg = algorithm;
-        // If music is already playing, we might want to reshuffle from the current song
         if (currentPlaylist != null) {
             int currentSongIndex = -1;
             if (playbackOrder != null && orderIndex >= 0 && orderIndex < playbackOrder.size()) {
@@ -265,7 +262,6 @@ public class PlaybackHandler {
             mediaPlayer.setLooping(isLooping);
         }
     }
-
 
     public static boolean isLooping() {
         return isLooping;
