@@ -146,6 +146,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
+
         // repeat checkbox (if checked, song loops)
         repeatCheckbox.setChecked(PlaybackHandler.isLooping());
         repeatCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {

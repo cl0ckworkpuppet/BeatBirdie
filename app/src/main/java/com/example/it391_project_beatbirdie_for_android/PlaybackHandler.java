@@ -266,6 +266,7 @@ public class PlaybackHandler {
         }
     }
 
+
     public static boolean isLooping() {
         return isLooping;
     }
