@@ -40,6 +40,8 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     private Runnable updateSeekBar;
     private SeekBar volumeSeekBar;
     private AudioManager audioManager;
+    private TextView currentTimeText;
+    private TextView totalTimeText;
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -67,6 +69,12 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             // Sync SeekBar with song duration and current position
             scrubberBar.setMax(PlaybackHandler.getDuration());
             scrubberBar.setProgress(PlaybackHandler.getCurrentPosition());
+
+            int current = PlaybackHandler.getCurrentPosition();
+            int total = PlaybackHandler.getDuration();
+
+            currentTimeText.setText(formatTime(current));
+            totalTimeText.setText(formatTime(total));
         }
         updatePlayPauseIcon();
     }
@@ -122,6 +130,8 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         playPause = findViewById(R.id.playpause);
         scrubberBar = findViewById(R.id.scrubberBar);
         repeatCheckbox = findViewById(R.id.repeatCheckbox);
+        currentTimeText = findViewById(R.id.currentTimeText);
+        totalTimeText = findViewById(R.id.totalTimeText);
         ImageButton skipButton = findViewById(R.id.skip);
         ImageButton rewindButton = findViewById(R.id.rewind);
         Spinner shuffleSpinner = findViewById(R.id.shuffleSpinner);
@@ -246,12 +256,24 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             @Override
             public void run() {
                 if (PlaybackHandler.isPlaying()) {
+                    int current = PlaybackHandler.getCurrentPosition();
+                    int total = PlaybackHandler.getDuration();
+
                     scrubberBar.setProgress(PlaybackHandler.getCurrentPosition());
+
+                    currentTimeText.setText(formatTime(current));
+                    totalTimeText.setText(formatTime(total));
                 }
                 handler.postDelayed(this, 1000); // Update every 1 second
             }
         };
         
         updateUI();
+    }
+    private  String formatTime (int ms) {
+        int seconds = ms / 1000;
+        int minutes = seconds / 60;
+        seconds = seconds % 60;
+        return String.format("%d:%02d", minutes, seconds);
     }
 }
