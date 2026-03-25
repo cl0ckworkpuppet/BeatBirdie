@@ -101,6 +101,8 @@
                 android:src="@android:drawable/ic_media_play"
                 android:contentDescription="Play or Pause"/>
 
+
+
             <ImageButton
                 android:id="@+id/skip"
                 android:layout_width="56dp"
@@ -108,7 +110,19 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_media_ff"
                 android:contentDescription="Skip"/>
+
+
         </LinearLayout>
+
+        <SeekBar
+            android:id="@+id/volumeSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"/>
+
+
 
         <Button
             android:id="@+id/btnViewQueue"

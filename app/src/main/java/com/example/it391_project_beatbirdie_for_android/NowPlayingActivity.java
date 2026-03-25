@@ -1,6 +1,8 @@
 package com.example.it391_project_beatbirdie_for_android;
 
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -36,6 +38,8 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     private CheckBox repeatCheckbox;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable updateSeekBar;
+    private SeekBar volumeSeekBar;
+    private AudioManager audioManager;
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -111,7 +115,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_now_playing);
-        
+
         songTitle = findViewById(R.id.songTitle);
         artistAlbum = findViewById(R.id.artistAlbum);
         albumCover = findViewById(R.id.albumCover);
@@ -122,6 +126,28 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         ImageButton rewindButton = findViewById(R.id.rewind);
         Spinner shuffleSpinner = findViewById(R.id.shuffleSpinner);
         Button btnViewQueue = findViewById(R.id.btnViewQueue);
+        SeekBar volumeSeekBar = findViewById(R.id.volumeSeekBar);
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        volumeSeekBar.setMax(maxVolume);
+        volumeSeekBar.setProgress(currentVolume);
+        volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
