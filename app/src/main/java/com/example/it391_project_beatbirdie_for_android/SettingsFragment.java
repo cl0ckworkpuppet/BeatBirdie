@@ -3,6 +3,7 @@ package com.example.it391_project_beatbirdie_for_android;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.WindowManager;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.ListPreference;
@@ -44,6 +45,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         SwitchPreferenceCompat keepScreenPref = findPreference("lock_screen_on");
         if (keepScreenPref != null) {
             keepScreenPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                boolean keepOn = (Boolean) newValue;
+                if (getActivity() != null) {
+                    if (keepOn) {
+                        getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    } else {
+                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    }
+                }
                 return true;
             });
         }

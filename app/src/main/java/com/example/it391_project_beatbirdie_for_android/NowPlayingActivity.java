@@ -90,6 +90,11 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     private void applyKeepScreenOn() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean keepOn = prefs.getBoolean("lock_screen_on", false);
+        View root = findViewById(R.id.main);
+        if (root != null) {
+            root.setKeepScreenOn(keepOn);
+        }
+
         if (keepOn) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         } else {

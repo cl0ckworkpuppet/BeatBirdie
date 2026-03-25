@@ -19,6 +19,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -215,6 +216,12 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
     private void applyKeepScreenOn() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean keepOn = prefs.getBoolean("lock_screen_on", false);
+        View root = findViewById(R.id.coordinatorLayout);
+        if (root != null) {
+            root.setKeepScreenOn(keepOn);
+        }
+        
+        // Also ensure window flags are synchronized
         if (keepOn) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         } else {
