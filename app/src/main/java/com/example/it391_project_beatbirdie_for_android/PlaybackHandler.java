@@ -109,10 +109,18 @@ public class PlaybackHandler {
                 startMusicService(appContext);
             });
 
+            // i'm messing with this mediaPlayer function right now.
+            // if it looks ugly that's because It Is.
             mediaPlayer.setOnCompletionListener(mp -> {
-                // Only skip to next if not looping
-                if (!isLooping) {
+                int pos = mp.getCurrentPosition();
+                int dur = mp.getDuration();
+
+                Log.d(TAG, "Completion fired at " + pos + " / " + dur);
+
+                if (!isLooping && dur > 0 && pos >= dur - 1000) {
                     next(appContext);
+                } else {
+                    Log.w(TAG, "Ignored premature completion event");
                 }
             });
 
