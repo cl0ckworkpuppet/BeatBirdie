@@ -82,11 +82,11 @@ public class PlaybackHandler {
         Log.d(TAG, "Playing song: " + song.getTitle() + " (Order index: " + orderIndex + ", Song index: " + songIndex + ")");
 
         if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
+            mediaPlayer.reset(); // Use reset instead of release for efficiency if possible
+        } else {
+            mediaPlayer = new MediaPlayer();
         }
 
-        mediaPlayer = new MediaPlayer();
         mediaPlayer.setLooping(isLooping);
         
         // Keep CPU awake during playback
@@ -101,17 +101,30 @@ public class PlaybackHandler {
 
         try {
             mediaPlayer.setDataSource(appContext, song.getUri());
-            mediaPlayer.prepare(); 
-            mediaPlayer.start();
-            notifySongChanged();
             
-            // Refresh/Start the foreground service
-            startMusicService(appContext);
+            mediaPlayer.setOnPreparedListener(mp -> {
+                mp.start();
+                notifySongChanged();
+                // Refresh/Start the foreground service
+                startMusicService(appContext);
+            });
 
-            // Automatically play next song when current one finishes
-            mediaPlayer.setOnCompletionListener(mp -> next(appContext));
+            mediaPlayer.setOnCompletionListener(mp -> {
+                // Only skip to next if not looping
+                if (!isLooping) {
+                    next(appContext);
+                }
+            });
+
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.e(TAG, "MediaPlayer error: what=" + what + ", extra=" + extra);
+                return true; 
+            });
+
+            mediaPlayer.prepareAsync(); 
+            
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error setting data source", e);
         }
     }
 
@@ -269,12 +282,20 @@ public class PlaybackHandler {
 
     // get position of scrubber bar
     public static int getCurrentPosition() {
-        return (mediaPlayer != null) ? mediaPlayer.getCurrentPosition() : 0;
+        try {
+            return (mediaPlayer != null) ? mediaPlayer.getCurrentPosition() : 0;
+        } catch (IllegalStateException e) {
+            return 0;
+        }
     }
 
     // get duration of song
     public static int getDuration() {
-        return (mediaPlayer != null) ? mediaPlayer.getDuration() : 0;
+        try {
+            return (mediaPlayer != null) ? mediaPlayer.getDuration() : 0;
+        } catch (IllegalStateException e) {
+            return 0;
+        }
     }
 
     // seek to a specific position of song on scrubber bar
