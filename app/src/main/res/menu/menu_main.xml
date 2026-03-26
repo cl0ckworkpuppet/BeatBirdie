@@ -8,16 +8,25 @@
         android:icon="@android:drawable/ic_menu_rotate"
         app:showAsAction="ifRoom" />
 
-    <item
-        android:id="@+id/action_settings"
-        android:title="Settings"
-        android:icon="@android:drawable/ic_menu_preferences"
-        app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/action_sort_title"
-        android:title="Sort by Title" />
-    <item
-        android:id="@+id/action_sort_artist"
-        android:title="Sort by Artist" />
+<!--    <item-->
+<!--        android:id="@+id/action_settings"-->
+<!--        android:title="Settings"-->
+<!--        android:icon="@android:drawable/ic_menu_preferences"-->
+<!--        app:showAsAction="ifRoom" />-->
 
+    <item
+        android:id="@+id/action_sort"
+        android:title="Sort"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        app:showAsAction="ifRoom">
+
+            <menu>
+                <item
+                    android:id="@+id/action_sort_title"
+                    android:title="Sort by Title" />
+                <item
+                    android:id="@+id/action_sort_artist"
+                    android:title="Sort by Artist" />
+            </menu>
+        </item>
 </menu>

@@ -162,12 +162,9 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-            startActivity(intent);
-            return true;
-        } else if (id == R.id.action_refresh) {
+        if (id == R.id.action_refresh) {
             loadSongs(); // Manually re-scan the library
+            Toast.makeText(this, "Library scanned.", Toast.LENGTH_SHORT).show();
             return true;
         }
         else if (id == R.id.action_sort_title) {
@@ -283,6 +280,11 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
+        toolbar.setNavigationIcon(android.R.drawable.ic_menu_preferences);
+
+        toolbar.setNavigationOnClickListener(v -> {
+            startActivity(new Intent(this, SettingsActivity.class));
+        });
 
         // Navigate to the full-screen player when bar is tapped
         LinearLayout nowPlayingBar = findViewById(R.id.nowPlayingBar);
