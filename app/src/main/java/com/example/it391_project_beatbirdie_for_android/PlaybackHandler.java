@@ -148,6 +148,7 @@ public class PlaybackHandler {
     }
 
     private static void startMusicService(Context context) {
+
         if (context == null) return;
         Intent serviceIntent = new Intent(context, MusicService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
