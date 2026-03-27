@@ -117,10 +117,21 @@ public class PlaybackHandler {
 
                 Log.d(TAG, "Completion fired at " + pos + " / " + dur);
 
-                if (!isLooping && dur > 0 && pos >= dur - 1000) {
-                    next(appContext);
+                if (dur > 0 && pos < dur - 1000) {
+                    Log.w(TAG, "Premature completion detected, attempting resume");
+
+                    int resumePos = Math.max(0, pos - 300); // go back slightly
+
+                    try {
+                        mp.seekTo(resumePos);
+                        mp.start();
+                    } catch (IllegalStateException e) {
+                        Log.e(TAG, "Resume failed, skipping instead", e);
+                        if (!isLooping) next(appContext);
+                    }
+
                 } else {
-                    Log.w(TAG, "Ignored premature completion event");
+                    if (!isLooping) next(appContext);
                 }
             });
 

@@ -42,6 +42,10 @@ public class Song {
 
     // gets the URI for the album art. needs a fancy metadata process
     public Uri getAlbumArtUri() {
-        return ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), albumId);
+        if (albumId <= 0) return null;
+        return ContentUris.withAppendedId(
+                Uri.parse("content://media/external/audio/albumart"),
+                albumId
+        );
     }
 }
