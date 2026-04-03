@@ -120,7 +120,7 @@ public class PlaybackHandler {
                 if (dur > 0 && pos < dur - 1000) {
                     Log.w(TAG, "Premature completion detected, attempting resume");
 
-                    int resumePos = Math.max(0, pos - 300); // go back slightly
+                    int resumePos = Math.max(0, pos - 150); // go back slightly. tweak as needed
 
                     try {
                         mp.seekTo(resumePos);
