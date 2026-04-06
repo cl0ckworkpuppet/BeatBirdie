@@ -2,23 +2,26 @@ package com.example.it391_project_beatbirdie_for_android;
 
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioAttributes;
-import android.media.MediaPlayer;
 import android.os.Build;
-import android.os.PowerManager;
 import android.util.Log;
-import java.io.IOException;
+
+import androidx.annotation.NonNull;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
+import androidx.media3.common.PlaybackException;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Singleton-like class that manages the MediaPlayer and playback state.
- * This class allows consistent music control across different Activities.
+ * Singleton-like class that manages the ExoPlayer and playback state.
  */
 public class PlaybackHandler {
 
     private static final String TAG = "PlaybackHandler";
-    private static MediaPlayer mediaPlayer;
+
+    private static ExoPlayer player;
     private static List<Song> currentPlaylist;
     private static List<Integer> playbackOrder;
     private static int orderIndex = -1;
@@ -48,27 +51,14 @@ public class PlaybackHandler {
         }
     }
 
-    /**
-     * Initializes the handler with the application context.
-     * @param context Activity or Application context.
-     */
     public static void init(Context context) {
         appContext = context.getApplicationContext();
     }
 
-    /**
-     * Loads and starts playing a specific song from a playlist.
-     * @param context Context used for data source.
-     * @param playlist List of songs available to play.
-     * @param index Position of the song in the playlist.
-     */
     public static void playSong(Context context, List<Song> playlist, int index) {
         if (playlist == null || index < 0 || index >= playlist.size()) return;
 
         currentPlaylist = playlist;
-
-        // When a specific song is selected, we regenerate the shuffle order
-        // and ensure the selected song is at the current position.
         generatePlaybackOrder(index);
         playCurrent(context);
     }
@@ -79,77 +69,44 @@ public class PlaybackHandler {
         int songIndex = playbackOrder.get(orderIndex);
         Song song = currentPlaylist.get(songIndex);
 
-        Log.d(TAG, "Playing song: " + song.getTitle() + " (Order index: " + orderIndex + ", Song index: " + songIndex + ")");
+        Log.d(TAG, "Playing song: " + song.getTitle());
 
-        if (mediaPlayer != null) {
-            mediaPlayer.reset(); // Use reset instead of release for efficiency if possible
-        } else {
-            mediaPlayer = new MediaPlayer();
+        // Release old player
+        if (player != null) {
+            player.release();
         }
 
-        mediaPlayer.setLooping(isLooping);
-        
-        // Keep CPU awake during playback
-        mediaPlayer.setWakeMode(appContext, PowerManager.PARTIAL_WAKE_LOCK);
-        
-        mediaPlayer.setAudioAttributes(
-                new AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .build()
-        );
+        player = new ExoPlayer.Builder(context).build();
 
-        try {
-            mediaPlayer.setDataSource(appContext, song.getUri());
-            
-            mediaPlayer.setOnPreparedListener(mp -> {
-                mp.start();
-                notifySongChanged();
-                // Refresh/Start the foreground service
-                startMusicService(appContext);
-            });
+        MediaItem mediaItem = MediaItem.fromUri(song.getUri());
+        player.setMediaItem(mediaItem);
 
-            // i'm messing with this mediaPlayer function right now.
-            // if it looks ugly that's because It Is.
-            mediaPlayer.setOnCompletionListener(mp -> {
-                int pos = mp.getCurrentPosition();
-                int dur = mp.getDuration();
+        player.setRepeatMode(isLooping ? Player.REPEAT_MODE_ONE : Player.REPEAT_MODE_OFF);
 
-                Log.d(TAG, "Completion fired at " + pos + " / " + dur);
-
-                if (dur > 0 && pos < dur - 1000) {
-                    Log.w(TAG, "Premature completion detected, attempting resume");
-
-                    int resumePos = Math.max(0, pos - 150); // go back slightly. tweak as needed
-
-                    try {
-                        mp.seekTo(resumePos);
-                        mp.start();
-                    } catch (IllegalStateException e) {
-                        Log.e(TAG, "Resume failed, skipping instead", e);
-                        if (!isLooping) next(appContext);
-                    }
-
-                } else {
+        player.addListener(new Player.Listener() {
+            @Override
+            public void onPlaybackStateChanged(int state) {
+                if (state == Player.STATE_READY) {
+                    player.play();
+                    notifySongChanged();
+                    startMusicService(appContext);
+                } else if (state == Player.STATE_ENDED) {
                     if (!isLooping) next(appContext);
                 }
-            });
+            }
 
-            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                Log.e(TAG, "MediaPlayer error: what=" + what + ", extra=" + extra);
-                return true; 
-            });
+            @Override
+            public void onPlayerError(@NonNull PlaybackException error) {
+                Log.e(TAG, "ExoPlayer error: " + error.getMessage());
+            }
+        });
 
-            mediaPlayer.prepareAsync(); 
-            
-        } catch (IOException e) {
-            Log.e(TAG, "Error setting data source", e);
-        }
+        player.prepare();
     }
 
     private static void startMusicService(Context context) {
-
         if (context == null) return;
+
         Intent serviceIntent = new Intent(context, MusicService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(serviceIntent);
@@ -160,7 +117,7 @@ public class PlaybackHandler {
 
     private static void generatePlaybackOrder(int startingSongIndex) {
         if (currentPlaylist == null) return;
-        
+
         int size = currentPlaylist.size();
         List<Integer> newOrder;
 
@@ -182,7 +139,6 @@ public class PlaybackHandler {
                 break;
         }
 
-        // If a specific song was requested to start, move it to the front or find it
         if (startingSongIndex != -1) {
             int posInOrder = -1;
             for (int i = 0; i < newOrder.size(); i++) {
@@ -191,7 +147,7 @@ public class PlaybackHandler {
                     break;
                 }
             }
-            
+
             if (posInOrder != -1) {
                 if (alg.equals("Default")) {
                     orderIndex = startingSongIndex;
@@ -202,7 +158,7 @@ public class PlaybackHandler {
         } else {
             orderIndex = 0;
         }
-        
+
         playbackOrder = newOrder;
     }
 
@@ -218,54 +174,38 @@ public class PlaybackHandler {
         return titles;
     }
 
-    /**
-     * Toggles between play and pause.
-     */
     public static void toggle() {
-        if (mediaPlayer == null) return;
-        if (mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
+        if (player == null) return;
+
+        if (player.isPlaying()) {
+            player.pause();
         } else {
-            mediaPlayer.start();
+            player.play();
             startMusicService(appContext);
         }
     }
 
-    /**
-     * Skips to the next song in the playlist.
-     */
     public static void next(Context context) {
         if (currentPlaylist == null || playbackOrder == null || playbackOrder.isEmpty()) return;
         orderIndex = (orderIndex + 1) % playbackOrder.size();
         playCurrent(context != null ? context : appContext);
     }
 
-    /**
-     * Rewinds to the start of the song or skips to the previous track.
-     */
     public static void previous(Context context) {
         if (currentPlaylist == null || playbackOrder == null || playbackOrder.isEmpty()) return;
-        
-        // If the song is more than 5 seconds in, restart the current song
-        if (mediaPlayer != null && mediaPlayer.getCurrentPosition() > 5000) {
-            mediaPlayer.seekTo(0);
+
+        if (player != null && player.getCurrentPosition() > 5000) {
+            player.seekTo(0);
         } else {
-            // Otherwise go to previous track
             orderIndex = (orderIndex - 1 + playbackOrder.size()) % playbackOrder.size();
             playCurrent(context);
         }
     }
 
-    /**
-     * @return True if music is currently playing.
-     */
     public static boolean isPlaying() {
-        return mediaPlayer != null && mediaPlayer.isPlaying();
+        return player != null && player.isPlaying();
     }
 
-    /**
-     * @return The Song object currently loaded.
-     */
     public static Song getCurrentSong() {
         if (currentPlaylist != null && playbackOrder != null && orderIndex >= 0 && orderIndex < playbackOrder.size()) {
             int songIndex = playbackOrder.get(orderIndex);
@@ -291,8 +231,8 @@ public class PlaybackHandler {
 
     public static void setLooping(boolean looping) {
         isLooping = looping;
-        if (mediaPlayer != null) {
-            mediaPlayer.setLooping(isLooping);
+        if (player != null) {
+            player.setRepeatMode(isLooping ? Player.REPEAT_MODE_ONE : Player.REPEAT_MODE_OFF);
         }
     }
 
@@ -300,28 +240,17 @@ public class PlaybackHandler {
         return isLooping;
     }
 
-    // get position of scrubber bar
     public static int getCurrentPosition() {
-        try {
-            return (mediaPlayer != null) ? mediaPlayer.getCurrentPosition() : 0;
-        } catch (IllegalStateException e) {
-            return 0;
-        }
+        return (player != null) ? (int) player.getCurrentPosition() : 0;
     }
 
-    // get duration of song
     public static int getDuration() {
-        try {
-            return (mediaPlayer != null) ? mediaPlayer.getDuration() : 0;
-        } catch (IllegalStateException e) {
-            return 0;
-        }
+        return (player != null) ? (int) player.getDuration() : 0;
     }
 
-    // seek to a specific position of song on scrubber bar
     public static void seekTo(int msec) {
-        if (mediaPlayer != null) {
-            mediaPlayer.seekTo(msec);
+        if (player != null) {
+            player.seekTo(msec);
         }
     }
 }
