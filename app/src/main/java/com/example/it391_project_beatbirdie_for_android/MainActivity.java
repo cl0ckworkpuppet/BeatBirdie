@@ -102,6 +102,25 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         }
     }
 
+    // helper method for song sorting
+    private int getGroup(String s) {
+        if (s.isEmpty()) return 3;
+
+        char c = s.charAt(0);
+
+        if (Character.isLetter(c)) return 0;   // A–Z first
+        if (Character.isDigit(c)) return 1;    // numbers next
+        if (isAsciiSymbol(c)) return 2;        // [ ] ! etc.
+        return 3;                              // everything else (「」 etc.)
+    }
+
+    private boolean isAsciiSymbol(char c) {
+        return (c >= 33 && c <= 47) ||
+                (c >= 58 && c <= 64) ||
+                (c >= 91 && c <= 96) ||
+                (c >= 123 && c <= 126);
+    }
+
     /**
      * Scans the MediaStore database for all audio files on the device.
      * Updates the songList and notifies the adapter of changes.
@@ -118,9 +137,9 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 MediaStore.Audio.Media.ALBUM_ID
         };
 
-        // Query any audio files found in common storage locations
-        Cursor cursor = getContentResolver().query(uri, projection, null, null, MediaStore.Audio.Media.TITLE + " ASC");
-        
+        // mediastore sorting is case sensitive. removed params and replaced with null when appropriate
+        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+
         if (cursor != null) {
             Log.d(TAG, "Query returned " + cursor.getCount() + " files.");
             while (cursor.moveToNext()) {
@@ -142,12 +161,32 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                     album = "Unknown Album";
                 }
 
-                Uri contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+                Uri contentUri = ContentUris.withAppendedId(
+                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
+                );
                 songList.add(new Song(title, artist, album, contentUri, albumId));
             }
             cursor.close();
         }
-        
+
+        // fixed line to sort by title regardless of case
+        songList.sort((s1, s2) -> {
+            String t1 = s1.getTitle();
+            String t2 = s2.getTitle();
+
+            if (t1 == null) t1 = "";
+            if (t2 == null) t2 = "";
+
+            int g1 = getGroup(t1);
+            int g2 = getGroup(t2);
+
+            // First: compare by group
+            if (g1 != g2) return Integer.compare(g1, g2);
+
+            // Then: normal case-insensitive compare
+            return t1.compareToIgnoreCase(t2);
+        });
+
         if (adapter != null) {
             adapter.notifyDataSetChanged();
         }
