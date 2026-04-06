@@ -37,7 +37,7 @@ public class PlaybackHandlerTest {
 
         Uri testUri = Uri.fromFile(testFile);
         List<Song> songs = new ArrayList<>();
-        songs.add(new Song("Test Song", "Test Artist", "Test Album", testUri));
+        songs.add(new Song("Test Song", "Test Artist", "Test Album", testUri, 0));
 
         // Test setting the song
         // We call playSong, which internally sets the current song.
