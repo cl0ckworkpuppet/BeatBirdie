@@ -22,4 +22,11 @@
         android:title="Keep Screen On"
         android:summary="Keep screen on during playback"/>
 
+    <!-- pause music when headphones are disconnected -->
+    <SwitchPreferenceCompat
+        android:key="pause_on_disconnect"
+        android:title="Pause on Disconnect"
+        android:summary="Automatically pause music when headphones are disconnected"
+        android:defaultValue="true" />
+
 </androidx.preference.PreferenceScreen>

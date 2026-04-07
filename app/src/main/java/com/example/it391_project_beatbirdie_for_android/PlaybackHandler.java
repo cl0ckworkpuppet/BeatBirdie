@@ -185,6 +185,13 @@ public class PlaybackHandler {
         }
     }
 
+    public static void pause() {
+        if (player != null && player.isPlaying()) {
+            player.pause();
+            notifySongChanged(); // Notify listeners to update UI (play/pause button)
+        }
+    }
+
     public static void next(Context context) {
         if (currentPlaylist == null || playbackOrder == null || playbackOrder.isEmpty()) return;
         orderIndex = (orderIndex + 1) % playbackOrder.size();
