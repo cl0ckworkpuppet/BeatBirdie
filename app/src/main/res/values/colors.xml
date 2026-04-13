@@ -2,6 +2,42 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="now_playing_light">#D6D6D6</color>
-    <color name="now_playing_dark">#1A1A1A</color>
+
+    <!-- Light Theme Colors (Pastel Yellow Base) -->
+    <color name="md_theme_light_primary">#5D3300</color> <!-- Even darker, more saturated brown-yellow -->
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_primaryContainer">#FFDDB3</color>
+    <color name="md_theme_light_onPrimaryContainer">#2E1500</color>
+    <color name="md_theme_light_secondary">#705B40</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_secondaryContainer">#FCDCBD</color>
+    <color name="md_theme_light_onSecondaryContainer">#251904</color>
+    <color name="md_theme_light_background">#FFFDE7</color> <!-- Pastel Yellow -->
+    <color name="md_theme_light_onBackground">#1D1B16</color>
+    <color name="md_theme_light_surface">#FFFDE7</color>
+    <color name="md_theme_light_onSurface">#1D1B16</color>
+    <color name="md_theme_light_surfaceVariant">#EFE1CF</color>
+    <color name="md_theme_light_onSurfaceVariant">#4F4539</color>
+    <color name="md_theme_light_outline">#817567</color>
+
+    <!-- Dark Theme Colors (Very Dark Yellow/Black Base) -->
+    <color name="md_theme_dark_primary">#FFE082</color> <!-- Much lighter, bright yellow-gold -->
+    <color name="md_theme_dark_onPrimary">#4B2700</color>
+    <color name="md_theme_dark_primaryContainer">#6B3A00</color>
+    <color name="md_theme_dark_onPrimaryContainer">#FFDDB3</color>
+    <color name="md_theme_dark_secondary">#DDC2A1</color>
+    <color name="md_theme_dark_onSecondary">#3E2D16</color>
+    <color name="md_theme_dark_secondaryContainer">#56442A</color>
+    <color name="md_theme_dark_onSecondaryContainer">#FCDCBD</color>
+    <color name="md_theme_dark_background">#0D0D00</color> <!-- Near black yellow -->
+    <color name="md_theme_dark_onBackground">#EAE1D9</color>
+    <color name="md_theme_dark_surface">#0D0D00</color>
+    <color name="md_theme_dark_onSurface">#EAE1D9</color>
+    <color name="md_theme_dark_surfaceVariant">#4F4539</color>
+    <color name="md_theme_dark_onSurfaceVariant">#D2C5B4</color>
+    <color name="md_theme_dark_outline">#9B8F80</color>
+
+    <!-- App Specific -->
+    <color name="now_playing_light">#ebde98</color>
+    <color name="now_playing_dark">#3d3502</color>
 </resources>

@@ -26,6 +26,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
 import com.bumptech.glide.Glide;
+import android.media.MediaMetadataRetriever;
+import android.util.Log;
 import java.util.List;
 
 public class NowPlayingActivity extends AppCompatActivity implements PlaybackHandler.PlaybackListener {
@@ -61,10 +63,32 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             String details = currentSong.getArtist() + " - " + currentSong.getAlbum();
             artistAlbum.setText(details);
             
-            Glide.with(this)
-                .load(currentSong.getAlbumArtUri())
-                .placeholder(R.drawable.ic_launcher_foreground)
-                .into(albumCover);
+            // Prefer embedded artwork first, then MediaStore album art
+            boolean loaded = false;
+            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+            try {
+                mmr.setDataSource(this, currentSong.getUri());
+                byte[] art = mmr.getEmbeddedPicture();
+                if (art != null && art.length > 0) {
+                    Glide.with(this)
+                        .asBitmap()
+                        .load(art)
+                        .placeholder(R.drawable.ic_launcher_foreground)
+                        .into(albumCover);
+                    loaded = true;
+                }
+            } catch (Exception e) {
+                Log.w("NowPlayingActivity", "Failed to load embedded art", e);
+            } finally {
+                try { mmr.release(); } catch (Exception ignored) {}
+            }
+
+            if (!loaded) {
+                Glide.with(this)
+                    .load(currentSong.getAlbumArtUri())
+                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .into(albumCover);
+            }
             
             // Sync SeekBar with song duration and current position
             scrubberBar.setMax(PlaybackHandler.getDuration());

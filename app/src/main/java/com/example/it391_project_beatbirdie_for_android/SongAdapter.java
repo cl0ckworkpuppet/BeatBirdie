@@ -5,6 +5,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.media.MediaMetadataRetriever;
+import android.util.Log;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import java.util.List;
@@ -58,10 +60,42 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
         String subtitle = song.getArtist() + " - " + song.getAlbum();
         holder.artist.setText(subtitle);
         
-        Glide.with(holder.itemView.getContext())
-            .load(song.getAlbumArtUri())
-            .placeholder(R.drawable.ic_launcher_foreground)
-            .into(holder.albumCover);
+        // Log album info to help diagnose duplicate-cover issues
+        Log.d("SongAdapter", "Binding pos=" + position + " title=" + song.getTitle() + " artist=" + song.getArtist() + " album=" + song.getAlbum() + " albumId=" + song.getAlbumId());
+
+        // Prefer embedded artwork first, then MediaStore album art, else placeholder
+        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+        boolean loaded = false;
+        try {
+            mmr.setDataSource(holder.itemView.getContext(), song.getUri());
+            byte[] art = mmr.getEmbeddedPicture();
+            if (art != null && art.length > 0) {
+                Glide.with(holder.itemView.getContext())
+                    .asBitmap()
+                    .load(art)
+                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .into(holder.albumCover);
+                Log.d("SongAdapter", "Used embedded art for " + song.getTitle());
+                loaded = true;
+            }
+        } catch (Exception e) {
+            Log.w("SongAdapter", "Error reading embedded art for " + song.getTitle(), e);
+        } finally {
+            try { mmr.release(); } catch (Exception ignored) {}
+        }
+
+        if (!loaded) {
+            if (song.getAlbumId() > 0) {
+                Glide.with(holder.itemView.getContext())
+                    .load(song.getAlbumArtUri())
+                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .into(holder.albumCover);
+                Log.d("SongAdapter", "Used MediaStore art for " + song.getTitle() + " albumId=" + song.getAlbumId());
+            } else {
+                holder.albumCover.setImageResource(R.drawable.ic_launcher_foreground);
+                Log.d("SongAdapter", "No art found for " + song.getTitle() + ", using placeholder");
+            }
+        }
     }
 
     @Override
