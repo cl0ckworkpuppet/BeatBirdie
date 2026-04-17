@@ -73,7 +73,8 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
                 Glide.with(holder.itemView.getContext())
                     .asBitmap()
                     .load(art)
-                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .placeholder(R.drawable.ic_music_note)
+                    .error(R.drawable.ic_music_note)
                     .into(holder.albumCover);
                 Log.d("SongAdapter", "Used embedded art for " + song.getTitle());
                 loaded = true;
@@ -88,11 +89,12 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
             if (song.getAlbumId() > 0) {
                 Glide.with(holder.itemView.getContext())
                     .load(song.getAlbumArtUri())
-                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .placeholder(R.drawable.ic_music_note)
+                    .error(R.drawable.ic_music_note)
                     .into(holder.albumCover);
                 Log.d("SongAdapter", "Used MediaStore art for " + song.getTitle() + " albumId=" + song.getAlbumId());
             } else {
-                holder.albumCover.setImageResource(R.drawable.ic_launcher_foreground);
+                holder.albumCover.setImageResource(R.drawable.ic_music_note);
                 Log.d("SongAdapter", "No art found for " + song.getTitle() + ", using placeholder");
             }
         }

@@ -1,20 +1,15 @@
 package com.example.it391_project_beatbirdie_for_android;
 
+import android.Manifest;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import android.Manifest;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
@@ -26,17 +21,22 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.widget.Toolbar;
+
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.appcompat.app.AlertDialog;
+
 import com.bumptech.glide.Glide;
-import android.media.MediaMetadataRetriever;
-import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,11 +52,17 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
     private TextView nowPlayingTitle;
     private TextView nowPlayingArtist;
     private ImageView nowPlayingCover;
+    private LinearLayout nowPlayingBar;
     private final List<Song> songList = new ArrayList<>();
     private SongAdapter adapter;
 
     @Override
     public void onSongChanged() {
+        runOnUiThread(this::updateNowPlayingBar);
+    }
+
+    @Override
+    public void onQueueModified() {
         runOnUiThread(this::updateNowPlayingBar);
     }
 
@@ -231,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
     private void updateNowPlayingBar() {
         Song currentSong = PlaybackHandler.getCurrentSong();
         if (currentSong != null) {
+            nowPlayingBar.setVisibility(View.VISIBLE);
             nowPlayingTitle.setText(currentSong.getTitle());
             nowPlayingArtist.setText(currentSong.getArtist());
             // Prefer embedded artwork first, then MediaStore album art
@@ -243,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                     Glide.with(this)
                         .asBitmap()
                         .load(art)
-                        .placeholder(R.drawable.ic_launcher_foreground)
+                        .placeholder(R.drawable.ic_music_note)
                         .into(nowPlayingCover);
                     loaded = true;
                 }
@@ -256,13 +263,11 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             if (!loaded) {
                 Glide.with(this)
                     .load(currentSong.getAlbumArtUri())
-                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .placeholder(R.drawable.ic_music_note)
                     .into(nowPlayingCover);
             }
         } else {
-            nowPlayingTitle.setText("No Song Playing");
-            nowPlayingArtist.setText("");
-            nowPlayingCover.setImageResource(R.drawable.ic_launcher_foreground);
+            nowPlayingBar.setVisibility(View.GONE);
         }
 
         // Update play/pause icon based on whether music is active
@@ -316,13 +321,14 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         // Initialize playback system
         PlaybackHandler.init(this);
 
+        nowPlayingBar = findViewById(R.id.nowPlayingBar);
         nowPlayingTitle = findViewById(R.id.nowPlayingTitle);
         nowPlayingArtist = findViewById(R.id.nowPlayingArtist);
         nowPlayingCover = findViewById(R.id.nowPlayingCover);
         playPause = findViewById(R.id.btnPlayPause);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.coordinatorLayout), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
@@ -350,7 +356,6 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         });
 
         // Navigate to the full-screen player when bar is tapped
-        LinearLayout nowPlayingBar = findViewById(R.id.nowPlayingBar);
         nowPlayingBar.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, NowPlayingActivity.class);
             startActivity(intent);
@@ -361,10 +366,13 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             PlaybackHandler.toggle();
             updateNowPlayingBar();
         });
-        
+
         // Ensure permissions are handled on first launch
         if (!hasPermissions()) {
             showPermissionRationaleDialog();
         }
+        
+        // Initial bar state
+        updateNowPlayingBar();
     }
 }

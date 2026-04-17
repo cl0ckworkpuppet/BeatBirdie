@@ -6,7 +6,9 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -25,9 +27,14 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import android.media.MediaMetadataRetriever;
 import android.util.Log;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class NowPlayingActivity extends AppCompatActivity implements PlaybackHandler.PlaybackListener {
@@ -44,6 +51,8 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     private AudioManager audioManager;
     private TextView currentTimeText;
     private TextView totalTimeText;
+    private QueueAdapter queueAdapter;
+    private RecyclerView queueRecyclerView;
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -53,8 +62,48 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
 
     @Override
     public void onSongChanged() {
-        runOnUiThread(this::updateUI);
+        runOnUiThread(() -> {
+            updateUI();
+            if (queueAdapter != null) {
+                refreshQueueData();
+            }
+        });
     }
+
+    @Override
+    public void onQueueModified() {
+        runOnUiThread(() -> {
+            if (queueAdapter != null) {
+                refreshQueueData();
+            }
+        });
+    }
+
+    private void refreshQueueData() {
+        List<Song> fullQueue = PlaybackHandler.getFullQueue();
+        int currentIndex = PlaybackHandler.getQueueOrderIndex();
+        
+        Song currentSong = null;
+        List<Song> upNext = new ArrayList<>();
+        
+        if (currentIndex != -1 && currentIndex < fullQueue.size()) {
+            currentSong = fullQueue.get(currentIndex);
+            for (int i = currentIndex + 1; i < fullQueue.size(); i++) {
+                upNext.add(fullQueue.get(i));
+            }
+        }
+        
+        // Update the static Now Playing section in the dialog if visible
+        if (currentSongSectionView != null) {
+            updateCurrentSongSection(currentSongSectionView, currentSong);
+        }
+        
+        if (queueAdapter != null) {
+            queueAdapter.updateData(upNext);
+        }
+    }
+
+    private View currentSongSectionView;
 
     private void updateUI() {
         Song currentSong = PlaybackHandler.getCurrentSong();
@@ -73,7 +122,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
                     Glide.with(this)
                         .asBitmap()
                         .load(art)
-                        .placeholder(R.drawable.ic_launcher_foreground)
+                        .placeholder(R.drawable.ic_music_note)
                         .into(albumCover);
                     loaded = true;
                 }
@@ -86,7 +135,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             if (!loaded) {
                 Glide.with(this)
                     .load(currentSong.getAlbumArtUri())
-                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .placeholder(R.drawable.ic_music_note)
                     .into(albumCover);
             }
             
@@ -202,7 +251,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         }
 
         // --- Shuffle Spinner Setup ---
-        String[] algorithms = {"Play in Order", "Fisher-Yates", "True Random, No Repeats", "Fair Play"};
+        String[] algorithms = {"Default", "Fisher-Yates", "True Random, No Repeats", "Fair Play"};
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this, 
                 android.R.layout.simple_spinner_item, algorithms);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -233,21 +282,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         });
 
         // --- View Queue Setup ---
-        btnViewQueue.setOnClickListener(v -> {
-            List<String> queue = PlaybackHandler.getQueueTitles();
-            if (queue.isEmpty()) return;
-
-            StringBuilder sb = new StringBuilder();
-            for (String title : queue) {
-                sb.append(title).append("\n");
-            }
-
-            new AlertDialog.Builder(this)
-                    .setTitle("Current Playback Order (" + PlaybackHandler.currentAlg() + ")")
-                    .setMessage(sb.toString())
-                    .setPositiveButton("Close", null)
-                    .show();
-        });
+        btnViewQueue.setOnClickListener(v -> showQueueDialog());
 
         playPause.setOnClickListener(v -> {
             PlaybackHandler.toggle();
@@ -299,6 +334,111 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         
         updateUI();
     }
+
+    private void showQueueDialog() {
+        List<Song> fullQueue = PlaybackHandler.getFullQueue();
+        int currentIndex = PlaybackHandler.getQueueOrderIndex();
+        
+        if (fullQueue.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Queue")
+                    .setMessage("The queue is empty.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+
+        // Inflate custom layout
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_queue, null);
+        currentSongSectionView = dialogView.findViewById(R.id.currentSongSection);
+        queueRecyclerView = dialogView.findViewById(R.id.queueRecyclerView);
+        queueRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        
+        Song currentSong = null;
+        List<Song> upNext = new ArrayList<>();
+        
+        if (currentIndex != -1 && currentIndex < fullQueue.size()) {
+            currentSong = fullQueue.get(currentIndex);
+            for (int i = currentIndex + 1; i < fullQueue.size(); i++) {
+                upNext.add(fullQueue.get(i));
+            }
+        }
+        
+        updateCurrentSongSection(currentSongSectionView, currentSong);
+
+        queueAdapter = new QueueAdapter(upNext, new QueueAdapter.OnQueueActionListener() {
+            @Override
+            public void onMoveToFront(int position) {
+                // Adjust position because upNext is offset by currentIndex + 1
+                int globalPos = PlaybackHandler.getQueueOrderIndex() + 1 + position;
+                PlaybackHandler.moveSongToFront(globalPos);
+            }
+
+            @Override
+            public void onRemove(int position) {
+                int globalPos = PlaybackHandler.getQueueOrderIndex() + 1 + position;
+                PlaybackHandler.removeSongFromQueue(globalPos);
+            }
+        });
+        queueRecyclerView.setAdapter(queueAdapter);
+        
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setPositiveButton("Close", (d, which) -> {
+                    queueAdapter = null;
+                    queueRecyclerView = null;
+                    currentSongSectionView = null;
+                })
+                .setOnDismissListener(d -> {
+                    queueAdapter = null;
+                    queueRecyclerView = null;
+                    currentSongSectionView = null;
+                })
+                .create();
+        
+        dialog.show();
+
+        // Make the dialog larger (85% of screen height and 90% of screen width)
+        if (dialog.getWindow() != null) {
+            int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.90);
+            int height = (int) (getResources().getDisplayMetrics().heightPixels * 0.85);
+            dialog.getWindow().setLayout(width, height);
+        }
+    }
+
+    private void updateCurrentSongSection(View section, Song song) {
+        if (section == null || song == null) return;
+        
+        TextView title = section.findViewById(R.id.songTitle);
+        TextView details = section.findViewById(R.id.songDetails);
+        ImageView cover = section.findViewById(R.id.queueAlbumCover);
+        ImageButton move = section.findViewById(R.id.btnMoveFront);
+        ImageButton remove = section.findViewById(R.id.btnRemove);
+        
+        title.setText(song.getTitle());
+        details.setText(song.getArtist() + " • " + song.getAlbum());
+        move.setVisibility(View.GONE);
+        remove.setVisibility(View.GONE);
+        
+        // Load cover
+        boolean loaded = false;
+        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+        try {
+            mmr.setDataSource(this, song.getUri());
+            byte[] art = mmr.getEmbeddedPicture();
+            if (art != null && art.length > 0) {
+                Glide.with(this).asBitmap().load(art).placeholder(R.drawable.ic_music_note).into(cover);
+                loaded = true;
+            }
+        } catch (Exception ignored) {
+        } finally {
+            try { mmr.release(); } catch (Exception ignored) {}
+        }
+        if (!loaded) {
+            Glide.with(this).load(song.getAlbumArtUri()).placeholder(R.drawable.ic_music_note).into(cover);
+        }
+    }
+
     private  String formatTime (int ms) {
         int seconds = ms / 1000;
         int minutes = seconds / 60;

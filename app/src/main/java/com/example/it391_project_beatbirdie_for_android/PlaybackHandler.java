@@ -31,6 +31,7 @@ public class PlaybackHandler {
 
     public interface PlaybackListener {
         void onSongChanged();
+        void onQueueModified();
     }
 
     private static final List<PlaybackListener> listeners = new ArrayList<>();
@@ -48,6 +49,12 @@ public class PlaybackHandler {
     private static void notifySongChanged() {
         for (PlaybackListener listener : new ArrayList<>(listeners)) {
             listener.onSongChanged();
+        }
+    }
+
+    private static void notifyQueueModified() {
+        for (PlaybackListener listener : new ArrayList<>(listeners)) {
+            listener.onQueueModified();
         }
     }
 
@@ -160,18 +167,96 @@ public class PlaybackHandler {
         }
 
         playbackOrder = newOrder;
+        notifyQueueModified();
     }
 
-    public static List<String> getQueueTitles() {
-        List<String> titles = new ArrayList<>();
+    public static List<Song> getFullQueue() {
+        List<Song> queue = new ArrayList<>();
         if (playbackOrder != null && currentPlaylist != null) {
-            for (int i = 0; i < playbackOrder.size(); i++) {
-                int songIndex = playbackOrder.get(i);
-                String prefix = (i == orderIndex) ? "▶ " : "";
-                titles.add(prefix + currentPlaylist.get(songIndex).getTitle());
+            for (int songIndex : playbackOrder) {
+                queue.add(currentPlaylist.get(songIndex));
             }
         }
-        return titles;
+        return queue;
+    }
+
+    public static int getQueueOrderIndex() {
+        return orderIndex;
+    }
+
+    public static void moveSongToFront(int position) {
+        if (playbackOrder == null || position < 0 || position >= playbackOrder.size()) return;
+
+        int currentSongGlobalIndex = -1;
+        if (orderIndex >= 0 && orderIndex < playbackOrder.size()) {
+            currentSongGlobalIndex = playbackOrder.get(orderIndex);
+        }
+
+        Integer songIndexToMove = playbackOrder.remove(position);
+
+        // Update orderIndex to point to the same song after removal
+        if (currentSongGlobalIndex != -1) {
+            for (int i = 0; i < playbackOrder.size(); i++) {
+                if (playbackOrder.get(i) == currentSongGlobalIndex) {
+                    orderIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Move to immediately after the current song (Play Next)
+        int targetIndex = (orderIndex >= 0) ? orderIndex + 1 : 0;
+        if (targetIndex > playbackOrder.size()) targetIndex = playbackOrder.size();
+
+        playbackOrder.add(targetIndex, songIndexToMove);
+
+        // Final sync of orderIndex (in case the insertion shifted it)
+        if (currentSongGlobalIndex != -1) {
+            for (int i = 0; i < playbackOrder.size(); i++) {
+                if (playbackOrder.get(i) == currentSongGlobalIndex) {
+                    orderIndex = i;
+                    break;
+                }
+            }
+        }
+
+        notifyQueueModified();
+    }
+
+    public static void removeSongFromQueue(int position) {
+        if (playbackOrder == null || position < 0 || position >= playbackOrder.size()) return;
+
+        int currentSongGlobalIndex = -1;
+        if (orderIndex >= 0 && orderIndex < playbackOrder.size()) {
+            currentSongGlobalIndex = playbackOrder.get(orderIndex);
+        }
+
+        int removedGlobalIndex = playbackOrder.remove(position);
+
+        if (removedGlobalIndex == currentSongGlobalIndex) {
+            if (playbackOrder.isEmpty()) {
+                orderIndex = -1;
+                if (player != null) player.stop();
+            } else {
+                if (orderIndex >= playbackOrder.size()) {
+                    orderIndex = 0;
+                }
+                // Play the new song at current index if it was playing
+                if (player != null && player.isPlaying()) {
+                    playCurrent(appContext);
+                }
+            }
+        } else {
+            if (currentSongGlobalIndex != -1) {
+                for (int i = 0; i < playbackOrder.size(); i++) {
+                    if (playbackOrder.get(i) == currentSongGlobalIndex) {
+                        orderIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+        notifyQueueModified();
     }
 
     public static void toggle() {

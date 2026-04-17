@@ -13,6 +13,9 @@ import androidx.preference.PreferenceManager;
 import androidx.preference.SwitchPreferenceCompat;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
+
+    private Preference shufflePref;
+
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         // for some reason the app INSISTS on making dark mode a boolean still. this is a fix for that
@@ -24,7 +27,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
-        Preference shufflePref = findPreference("shuffle_algorithms");
+        shufflePref = findPreference("shuffle_algorithms");
+        updateShuffleSummary();
         if (shufflePref != null) {
             shufflePref.setOnPreferenceClickListener(preference -> {
                 Intent intent = new Intent(getContext(), ShuffleAlgorithmsActivity.class);
@@ -56,6 +60,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
+    }
+
+    private void updateShuffleSummary() {
+        if (shufflePref != null) {
+            shufflePref.setSummary("Currently using: " + PlaybackHandler.currentAlg());
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateShuffleSummary();
     }
 
     private void applyTheme(String themeValue) {
