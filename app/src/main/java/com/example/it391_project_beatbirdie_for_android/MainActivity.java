@@ -37,6 +37,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import me.zhanghai.android.fastscroll.FastScrollerBuilder;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -343,6 +345,10 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             updateNowPlayingBar();
         });
         recyclerView.setAdapter(adapter);
+
+        new FastScrollerBuilder(recyclerView)
+                .useMd2Style()
+                .build();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

@@ -17,6 +17,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private Preference shufflePref;
 
     @Override
+
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         // for some reason the app INSISTS on making dark mode a boolean still. this is a fix for that
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());

@@ -5,13 +5,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.media.MediaMetadataRetriever;
-import android.util.Log;
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import java.util.List;
+import me.zhanghai.android.fastscroll.PopupTextProvider;
 
-public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
+public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> implements PopupTextProvider {
 
     private List<Song> songs;
     private OnSongClickListener listener;
@@ -60,43 +60,30 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
         String subtitle = song.getArtist() + " - " + song.getAlbum();
         holder.artist.setText(subtitle);
         
-        // Log album info to help diagnose duplicate-cover issues
-        Log.d("SongAdapter", "Binding pos=" + position + " title=" + song.getTitle() + " artist=" + song.getArtist() + " album=" + song.getAlbum() + " albumId=" + song.getAlbumId());
+        // Use Glide with the MediaStore AlbumArtUri. 
+        // This is MUCH faster than MediaMetadataRetriever because it uses system-cached thumbnails.
+        Glide.with(holder.itemView.getContext())
+            .load(song.getAlbumArtUri())
+            .placeholder(R.drawable.ic_music_note)
+            .error(R.drawable.ic_music_note)
+            .into(holder.albumCover);
+    }
 
-        // Prefer embedded artwork first, then MediaStore album art, else placeholder
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-        boolean loaded = false;
-        try {
-            mmr.setDataSource(holder.itemView.getContext(), song.getUri());
-            byte[] art = mmr.getEmbeddedPicture();
-            if (art != null && art.length > 0) {
-                Glide.with(holder.itemView.getContext())
-                    .asBitmap()
-                    .load(art)
-                    .placeholder(R.drawable.ic_music_note)
-                    .error(R.drawable.ic_music_note)
-                    .into(holder.albumCover);
-                Log.d("SongAdapter", "Used embedded art for " + song.getTitle());
-                loaded = true;
-            }
-        } catch (Exception e) {
-            Log.w("SongAdapter", "Error reading embedded art for " + song.getTitle(), e);
-        } finally {
-            try { mmr.release(); } catch (Exception ignored) {}
+    @NonNull
+    @Override
+    public String getPopupText(View view, int position) {
+        String title = songs.get(position).getTitle();
+        if (title == null || title.trim().isEmpty()) {
+            return "&";
         }
-
-        if (!loaded) {
-            if (song.getAlbumId() > 0) {
-                Glide.with(holder.itemView.getContext())
-                    .load(song.getAlbumArtUri())
-                    .placeholder(R.drawable.ic_music_note)
-                    .error(R.drawable.ic_music_note)
-                    .into(holder.albumCover);
-                Log.d("SongAdapter", "Used MediaStore art for " + song.getTitle() + " albumId=" + song.getAlbumId());
-            } else {
-                holder.albumCover.setImageResource(R.drawable.ic_music_note);
-                Log.d("SongAdapter", "No art found for " + song.getTitle() + ", using placeholder");
-            }
+        
+        char c = title.trim().charAt(0);
+        if (Character.isLetter(c)) {
+            return String.valueOf(Character.toUpperCase(c));
+        } else if (Character.isDigit(c)) {
+            return "#";
+        } else {
+            return "&";
         }
     }
 

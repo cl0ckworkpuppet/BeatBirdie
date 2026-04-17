@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.recyclerview)
+    implementation(libs.fastscroll)
     implementation(libs.glide)
     implementation(libs.preference)
     implementation("androidx.media3:media3-exoplayer:1.10.0")
