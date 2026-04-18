@@ -40,6 +40,7 @@ dependencies {
     implementation(libs.recyclerview)
     implementation(libs.fastscroll)
     implementation(libs.glide)
+    annotationProcessor(libs.glide.compiler)
     implementation(libs.preference)
     implementation("androidx.media3:media3-exoplayer:1.10.0")
     implementation("androidx.media3:media3-common:1.10.0")

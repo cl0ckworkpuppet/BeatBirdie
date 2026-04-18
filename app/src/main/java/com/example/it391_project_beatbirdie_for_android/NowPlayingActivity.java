@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import android.media.MediaMetadataRetriever;
 import android.util.Log;
 
@@ -108,34 +109,32 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     private void updateUI() {
         Song currentSong = PlaybackHandler.getCurrentSong();
         if (currentSong != null) {
-            songTitle.setText(currentSong.getTitle());
-            String details = currentSong.getArtist() + " - " + currentSong.getAlbum();
-            artistAlbum.setText(details);
-            
-            // Prefer embedded artwork first, then MediaStore album art
-            boolean loaded = false;
-            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-            try {
-                mmr.setDataSource(this, currentSong.getUri());
-                byte[] art = mmr.getEmbeddedPicture();
-                if (art != null && art.length > 0) {
-                    Glide.with(this)
-                        .asBitmap()
-                        .load(art)
-                        .placeholder(R.drawable.ic_music_note)
-                        .into(albumCover);
-                    loaded = true;
-                }
-            } catch (Exception e) {
-                Log.w("NowPlayingActivity", "Failed to load embedded art", e);
-            } finally {
-                try { mmr.release(); } catch (Exception ignored) {}
+            // Only update text if it's different to prevent Marquee reset
+            String title = currentSong.getTitle();
+            if (!songTitle.getText().toString().equals(title)) {
+                songTitle.setText(title);
+                songTitle.setSelected(true); // Required for marquee to start
             }
 
-            if (!loaded) {
+            String details = currentSong.getArtist() + " - " + currentSong.getAlbum();
+            if (!artistAlbum.getText().toString().equals(details)) {
+                artistAlbum.setText(details);
+                artistAlbum.setSelected(true); // Required for marquee to start
+            }
+
+            // Use a tag on the ImageView to track which song's art is currently loaded.
+            // This prevents Glide from re-triggering (and potentially flickering) when 
+            // the UI refreshes due to playback state changes or seek events.
+            String songUriString = currentSong.getUri().toString();
+            if (!songUriString.equals(albumCover.getTag())) {
+                albumCover.setTag(songUriString);
                 Glide.with(this)
-                    .load(currentSong.getAlbumArtUri())
+                    .load(new AudioCoverModel(currentSong.getUri()))
                     .placeholder(R.drawable.ic_music_note)
+                    .error(Glide.with(this)
+                        .load(currentSong.getAlbumArtUri())
+                        .error(R.drawable.ic_music_note))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(albumCover);
             }
             
@@ -420,23 +419,15 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         move.setVisibility(View.GONE);
         remove.setVisibility(View.GONE);
         
-        // Load cover
-        boolean loaded = false;
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-        try {
-            mmr.setDataSource(this, song.getUri());
-            byte[] art = mmr.getEmbeddedPicture();
-            if (art != null && art.length > 0) {
-                Glide.with(this).asBitmap().load(art).placeholder(R.drawable.ic_music_note).into(cover);
-                loaded = true;
-            }
-        } catch (Exception ignored) {
-        } finally {
-            try { mmr.release(); } catch (Exception ignored) {}
-        }
-        if (!loaded) {
-            Glide.with(this).load(song.getAlbumArtUri()).placeholder(R.drawable.ic_music_note).into(cover);
-        }
+        // Load cover using robust AudioCoverModel
+        Glide.with(this)
+            .load(new AudioCoverModel(song.getUri()))
+            .placeholder(R.drawable.ic_music_note)
+            .error(Glide.with(this)
+                .load(song.getAlbumArtUri())
+                .error(R.drawable.ic_music_note))
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .into(cover);
     }
 
     private  String formatTime (int ms) {

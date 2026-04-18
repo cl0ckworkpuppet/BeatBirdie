@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import java.util.List;
 import me.zhanghai.android.fastscroll.PopupTextProvider;
 
@@ -15,6 +16,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
 
     private List<Song> songs;
     private OnSongClickListener listener;
+    private String sortType = "title";
+
+    public void setSortType(String sortType) {
+        this.sortType = sortType;
+    }
 
     public interface OnSongClickListener {
         void onSongClick(int position);
@@ -60,24 +66,38 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
         String subtitle = song.getArtist() + " - " + song.getAlbum();
         holder.artist.setText(subtitle);
         
-        // Use Glide with the MediaStore AlbumArtUri. 
-        // This is MUCH faster than MediaMetadataRetriever because it uses system-cached thumbnails.
+        // Robust loading using custom AudioCoverModel.
+        // This prioritizes embedded art via MediaMetadataRetriever (cached by Glide).
+        // If embedded art fails, it falls back to the MediaStore album art URI.
         Glide.with(holder.itemView.getContext())
-            .load(song.getAlbumArtUri())
+            .load(new AudioCoverModel(song.getUri()))
+            .override(160, 160)
             .placeholder(R.drawable.ic_music_note)
-            .error(R.drawable.ic_music_note)
+            .error(Glide.with(holder.itemView.getContext())
+                .load(song.getAlbumArtUri())
+                .override(160, 160)
+                .error(R.drawable.ic_music_note))
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(holder.albumCover);
     }
 
     @NonNull
     @Override
     public String getPopupText(View view, int position) {
-        String title = songs.get(position).getTitle();
-        if (title == null || title.trim().isEmpty()) {
+        String textToCompare;
+        if ("artist".equalsIgnoreCase(sortType)) {
+            textToCompare = songs.get(position).getArtist();
+        } else if ("album".equalsIgnoreCase(sortType)) {
+            textToCompare = songs.get(position).getAlbum();
+        } else {
+            textToCompare = songs.get(position).getTitle();
+        }
+
+        if (textToCompare == null || textToCompare.trim().isEmpty()) {
             return "&";
         }
         
-        char c = title.trim().charAt(0);
+        char c = textToCompare.trim().charAt(0);
         if (Character.isLetter(c)) {
             return String.valueOf(Character.toUpperCase(c));
         } else if (Character.isDigit(c)) {

@@ -26,6 +26,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -36,6 +37,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 import me.zhanghai.android.fastscroll.FastScrollerBuilder;
 
@@ -144,7 +146,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 MediaStore.Audio.Media.ARTIST,
                 MediaStore.Audio.Media.ALBUM,
                 MediaStore.Audio.Media.DISPLAY_NAME,
-                MediaStore.Audio.Media.ALBUM_ID
+                MediaStore.Audio.Media.ALBUM_ID,
+                MediaStore.Audio.Media.DURATION
         };
 
         // mediastore sorting is case sensitive. removed params and replaced with null when appropriate
@@ -159,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 String album = cursor.getString(3);
                 String fileName = cursor.getString(4);
                 long albumId = cursor.getLong(5);
+                int duration = cursor.getInt(6);
 
                 // Fallback to filename if metadata is missing
                 if (title == null || title.isEmpty()) {
@@ -174,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 Uri contentUri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
                 );
-                songList.add(new Song(title, artist, album, contentUri, albumId));
+                songList.add(new Song(title, artist, album, contentUri, albumId, duration));
             }
             cursor.close();
         }
@@ -217,15 +221,55 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             return true;
         }
         else if (id == R.id.action_sort_title) {
-            songList.sort((s1, s2) -> s1.getTitle().compareToIgnoreCase(s2.getTitle()));
+            songList.sort((s1, s2) -> {
+                String t1 = s1.getTitle();
+                String t2 = s2.getTitle();
+                if (t1 == null) t1 = "";
+                if (t2 == null) t2 = "";
+                int g1 = getGroup(t1);
+                int g2 = getGroup(t2);
+                if (g1 != g2) return Integer.compare(g1, g2);
+                return t1.compareToIgnoreCase(t2);
+            });
+            PlaybackHandler.updatePlaylist(songList);
             if (adapter != null) {
+                adapter.setSortType("title");
                 adapter.notifyDataSetChanged();
             }
             return true;
         }
         else if (id == R.id.action_sort_artist) {
-            songList.sort((s1, s2) -> s1.getArtist().compareToIgnoreCase(s2.getArtist()));
+            songList.sort((s1, s2) -> {
+                String a1 = s1.getArtist();
+                String a2 = s2.getArtist();
+                if (a1 == null) a1 = "";
+                if (a2 == null) a2 = "";
+                int g1 = getGroup(a1);
+                int g2 = getGroup(a2);
+                if (g1 != g2) return Integer.compare(g1, g2);
+                return a1.compareToIgnoreCase(a2);
+            });
+            PlaybackHandler.updatePlaylist(songList);
             if (adapter != null) {
+                adapter.setSortType("artist");
+                adapter.notifyDataSetChanged();
+            }
+            return true;
+        }
+        else if (id == R.id.action_sort_album) {
+            songList.sort((s1, s2) -> {
+                String al1 = s1.getAlbum();
+                String al2 = s2.getAlbum();
+                if (al1 == null) al1 = "";
+                if (al2 == null) al2 = "";
+                int g1 = getGroup(al1);
+                int g2 = getGroup(al2);
+                if (g1 != g2) return Integer.compare(g1, g2);
+                return al1.compareToIgnoreCase(al2);
+            });
+            PlaybackHandler.updatePlaylist(songList);
+            if (adapter != null) {
+                adapter.setSortType("album");
                 adapter.notifyDataSetChanged();
             }
             return true;
@@ -242,32 +286,18 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             nowPlayingBar.setVisibility(View.VISIBLE);
             nowPlayingTitle.setText(currentSong.getTitle());
             nowPlayingArtist.setText(currentSong.getArtist());
-            // Prefer embedded artwork first, then MediaStore album art
-            boolean loaded = false;
-            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-            try {
-                mmr.setDataSource(this, currentSong.getUri());
-                byte[] art = mmr.getEmbeddedPicture();
-                if (art != null && art.length > 0) {
-                    Glide.with(this)
-                        .asBitmap()
-                        .load(art)
-                        .placeholder(R.drawable.ic_music_note)
-                        .into(nowPlayingCover);
-                    loaded = true;
-                }
-            } catch (Exception e) {
-                Log.w("MainActivity", "Failed to load embedded art", e);
-            } finally {
-                try { mmr.release(); } catch (Exception ignored) {}
-            }
-
-            if (!loaded) {
-                Glide.with(this)
+            
+            // Robust loading using custom AudioCoverModel.
+            // This prioritizes embedded art via MediaMetadataRetriever (cached by Glide).
+            // If embedded art fails, it falls back to the MediaStore album art URI.
+            Glide.with(this)
+                .load(new AudioCoverModel(currentSong.getUri()))
+                .placeholder(R.drawable.ic_music_note)
+                .error(Glide.with(this)
                     .load(currentSong.getAlbumArtUri())
-                    .placeholder(R.drawable.ic_music_note)
-                    .into(nowPlayingCover);
-            }
+                    .error(R.drawable.ic_music_note))
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(nowPlayingCover);
         } else {
             nowPlayingBar.setVisibility(View.GONE);
         }
@@ -314,8 +344,26 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         PlaybackHandler.removeListener(this);
     }
 
+    private void applyTheme() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String themeValue = prefs.getString("dark_mode", "default");
+        switch (themeValue) {
+            case "light":
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case "dark":
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case "default":
+            default:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                break;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        applyTheme();
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);

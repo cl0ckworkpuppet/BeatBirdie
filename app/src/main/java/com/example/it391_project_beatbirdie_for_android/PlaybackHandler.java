@@ -60,14 +60,63 @@ public class PlaybackHandler {
 
     public static void init(Context context) {
         appContext = context.getApplicationContext();
+        android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext);
+        alg = prefs.getString("shuffle_alg", "Default");
+        isLooping = prefs.getBoolean("is_looping", false);
     }
 
     public static void playSong(Context context, List<Song> playlist, int index) {
         if (playlist == null || index < 0 || index >= playlist.size()) return;
 
-        currentPlaylist = playlist;
+        currentPlaylist = new ArrayList<>(playlist);
         generatePlaybackOrder(index);
         playCurrent(context);
+    }
+
+    /**
+     * Updates the underlying playlist (e.g., when the user re-sorts the list in the UI).
+     * Synchronizes the playback order to keep playing the same song.
+     */
+    public static void updatePlaylist(List<Song> newList) {
+        if (newList == null || currentPlaylist == null) return;
+
+        // Remember what we're currently playing
+        Song currentSong = getCurrentSong();
+        
+        // Update the source list
+        currentPlaylist = new ArrayList<>(newList);
+
+        // If something is playing, we need to find its new index in the source list
+        // and update the playbackOrder so it points to the correct items.
+        if (currentSong != null && playbackOrder != null) {
+            // Find current song's new index in the source list
+            int newGlobalIndex = -1;
+            for (int i = 0; i < currentPlaylist.size(); i++) {
+                if (currentPlaylist.get(i).getUri().equals(currentSong.getUri())) {
+                    newGlobalIndex = i;
+                    break;
+                }
+            }
+
+            if (newGlobalIndex != -1) {
+                // We basically need to re-generate the order but keep the current song where it is in the queue
+                // For simplicity, if we re-sort the main list, we just re-sync the indices.
+                // In "Default" (no shuffle) mode, the queue IS the list.
+                if (alg.equals("Default")) {
+                    playbackOrder.clear();
+                    for (int i = 0; i < currentPlaylist.size(); i++) {
+                        playbackOrder.add(i);
+                    }
+                    orderIndex = newGlobalIndex;
+                } else {
+                    // In shuffle modes, we keep the shuffle order as is, but update the pointers
+                    // to the new global indices in the source list.
+                    // This is complex because the source list changed.
+                    // Simplest fix for the "discrepancy" bug: re-generate the shuffle order starting from the current song.
+                    generatePlaybackOrder(newGlobalIndex);
+                }
+            }
+        }
     }
 
     private static void playCurrent(Context context) {
@@ -78,37 +127,40 @@ public class PlaybackHandler {
 
         Log.d(TAG, "Playing song: " + song.getTitle());
 
-        // Release old player
-        if (player != null) {
-            player.release();
-        }
+        // Initialize player once and reuse it
+        if (player == null) {
+            player = new ExoPlayer.Builder(context.getApplicationContext()).build();
+            player.addListener(new Player.Listener() {
+                @Override
+                public void onPlaybackStateChanged(int state) {
+                    if (state == Player.STATE_READY) {
+                        notifySongChanged(); // Update UI when duration is known
+                        startMusicService(appContext);
+                    } else if (state == Player.STATE_ENDED) {
+                        if (!isLooping) next(appContext);
+                    }
+                }
 
-        player = new ExoPlayer.Builder(context).build();
+                @Override
+                public void onIsPlayingChanged(boolean isPlaying) {
+                    notifySongChanged(); // Update Play/Pause buttons
+                }
+
+                @Override
+                public void onPlayerError(@NonNull PlaybackException error) {
+                    Log.e(TAG, "ExoPlayer error: " + error.getMessage());
+                }
+            });
+        }
 
         MediaItem mediaItem = MediaItem.fromUri(song.getUri());
         player.setMediaItem(mediaItem);
-
         player.setRepeatMode(isLooping ? Player.REPEAT_MODE_ONE : Player.REPEAT_MODE_OFF);
-
-        player.addListener(new Player.Listener() {
-            @Override
-            public void onPlaybackStateChanged(int state) {
-                if (state == Player.STATE_READY) {
-                    player.play();
-                    notifySongChanged();
-                    startMusicService(appContext);
-                } else if (state == Player.STATE_ENDED) {
-                    if (!isLooping) next(appContext);
-                }
-            }
-
-            @Override
-            public void onPlayerError(@NonNull PlaybackException error) {
-                Log.e(TAG, "ExoPlayer error: " + error.getMessage());
-            }
-        });
-
+        player.setPlayWhenReady(true);
         player.prepare();
+
+        // Notify immediately to update metadata (Title, Artist, Art)
+        notifySongChanged();
     }
 
     private static void startMusicService(Context context) {
@@ -295,7 +347,9 @@ public class PlaybackHandler {
     }
 
     public static boolean isPlaying() {
-        return player != null && player.isPlaying();
+        if (player == null) return false;
+        // Check playWhenReady so the UI button stays as "Pause" during buffering/loading
+        return player.getPlayWhenReady();
     }
 
     public static Song getCurrentSong() {
@@ -312,6 +366,10 @@ public class PlaybackHandler {
 
     public static void setAlg(String algorithm) {
         alg = algorithm;
+        if (appContext != null) {
+            android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext);
+            prefs.edit().putString("shuffle_alg", alg).apply();
+        }
         if (currentPlaylist != null) {
             int currentSongIndex = -1;
             if (playbackOrder != null && orderIndex >= 0 && orderIndex < playbackOrder.size()) {
@@ -323,6 +381,10 @@ public class PlaybackHandler {
 
     public static void setLooping(boolean looping) {
         isLooping = looping;
+        if (appContext != null) {
+            android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext);
+            prefs.edit().putBoolean("is_looping", isLooping).apply();
+        }
         if (player != null) {
             player.setRepeatMode(isLooping ? Player.REPEAT_MODE_ONE : Player.REPEAT_MODE_OFF);
         }
@@ -337,7 +399,11 @@ public class PlaybackHandler {
     }
 
     public static int getDuration() {
-        return (player != null) ? (int) player.getDuration() : 0;
+        if (player != null && player.getDuration() > 0) {
+            return (int) player.getDuration();
+        }
+        Song current = getCurrentSong();
+        return (current != null) ? current.getDuration() : 0;
     }
 
     public static void seekTo(int msec) {

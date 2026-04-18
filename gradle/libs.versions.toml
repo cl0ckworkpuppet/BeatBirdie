@@ -23,6 +23,7 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 fastscroll = { group = "me.zhanghai.android.fastscroll", name = "library", version.ref = "androidFastScroll" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
 preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
 
 [plugins]

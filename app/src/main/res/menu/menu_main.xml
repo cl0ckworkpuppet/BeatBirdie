@@ -27,6 +27,9 @@
                 <item
                     android:id="@+id/action_sort_artist"
                     android:title="Sort by Artist" />
+                <item
+                    android:id="@+id/action_sort_album"
+                    android:title="Sort by Album" />
             </menu>
         </item>
 </menu>
