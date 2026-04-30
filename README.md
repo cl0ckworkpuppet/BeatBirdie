@@ -96,4 +96,4 @@ To test the scanning engine on an emulator:
 ---
 
 ## Privacy Commitment
-Pertaining to our user-first design philosophy, BeatBirdie is committed to user privacy. 100% offline. It does not track your listening habits, require an account, or transmit your library data to any external servers. BeatBirdie will never collect, save, or share your data.
+Pertaining to our user-first design philosophy, BeatBirdie is committed to user privacy. Our app is 100% offline. It does not track your listening habits, require an account, or transmit your library data to any external servers. BeatBirdie will never collect, save, or share your data.
