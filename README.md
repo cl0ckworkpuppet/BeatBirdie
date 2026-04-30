@@ -24,11 +24,30 @@ BeatBirdie is structured using modern design principles and utilizes every bit o
 
 ---
 
+## Setup & Deployment
+
+### Developer Prerequisites
+*   **Android SDK**: API 24 (Nougat) or higher.
+*   **Build Tool**: Android Studio (modern releases) with Gradle.
+
+### Installation
+1.  Clone the repository.
+2.  Open in Android Studio and perform a Gradle Sync.
+3.  Deploy to an emulator or physical device.
+
+### Populating the Library
+To test the scanning engine on an emulator:
+1.  Drag any `.mp3` or `.m4a` file onto the emulator window.
+2.  The file will land in `/sdcard/Download`.
+3.  Use the **Refresh Library** menu item in BeatBirdie to trigger the `MediaStore` indexer.
+
+---
+
 ## User First-Time Setup & Use
 
 ### 1. Initial Launch & Permissions
 When you open BeatBirdie for the first time, the app initiates its onboarding:
-*   **Rationale Dialog**: You will be greeted with an explanation of why the app requires file access. BeatBirdie needs this to scan your storage for audio files; without it, your music library cannot be displayed. *BeatBirdie will never access data beyond what is absolutely necessary, and will never distribute your data, period.*
+*   **Rationale Dialog**: You will be greeted with an explanation of why the app requires file access. BeatBirdie needs this to scan your storage for audio files; without it, your music library cannot be displayed. *BeatBirdie will never access data beyond what is absolutely necessary, and will never distribute your data.*
 *   **Granting Access**: Upon clicking "Allow Access," the standard Android system permission prompt will appear. Ensure you select "Allow" or "Allow access to music and audio" (on Android 13+).
 *   **Immediate Scanning**: Once permission is granted, BeatBirdie automatically triggers its internal scanner to find and index your music in seconds.
 
@@ -54,25 +73,6 @@ Tap the "Now Playing" bar at the bottom to expand it into the full-screen Focus 
 *   **Custom Shuffle Logic**: Visit the Settings menu to change how your music is shuffled, choosing between Fisher-Yates, True Random, or the clumping-resistant Fair Play algorithm.
     *   *Tip*: You can also select your shuffle algorithm in the Focus View using the dropdown on the bottom-left.
 *   **Sorting Your Music List**: Sorting by title isn't the only way to sort your library: by clicking the three bars on the top-right corner of your screen, you can choose to sort by title, artist name, or album name.
-
----
-
-## Setup & Deployment
-
-### Developer Prerequisites
-*   **Android SDK**: API 24 (Nougat) or higher.
-*   **Build Tool**: Android Studio (modern releases) with Gradle.
-
-### Installation
-1.  Clone the repository.
-2.  Open in Android Studio and perform a Gradle Sync.
-3.  Deploy to an emulator or physical device.
-
-### Populating the Library
-To test the scanning engine on an emulator:
-1.  Drag any `.mp3` or `.m4a` file onto the emulator window.
-2.  The file will land in `/sdcard/Download`.
-3.  Use the **Refresh Library** menu item in BeatBirdie to trigger the `MediaStore` indexer.
 
 ---
 
