@@ -24,22 +24,13 @@ BeatBirdie is structured using modern design principles and utilizes every bit o
 
 ---
 
-## Setup & Deployment
-
-### Developer Prerequisites
-*   **Android SDK**: API 24 (Nougat) or higher.
-*   **Build Tool**: Android Studio (modern releases) with Gradle.
-
-### Installation
-1.  Clone the repository.
-2.  Open in Android Studio and perform a Gradle Sync.
-3.  Deploy to an emulator or physical device.
-
-### Populating the Library
-To test the scanning engine on an emulator:
-1.  Drag any `.mp3` or `.m4a` file onto the emulator window.
-2.  The file will land in `/sdcard/Download`.
-3.  Use the **Refresh Library** menu item in BeatBirdie to trigger the `MediaStore` indexer.
+## Simple Installation
+For those without Android Studio on their computer, you can get this app on your Android device:
+* Go to the [Releases](https://github.com/cl0ckworkpuppet/IT_391_Project/releases) page and download the latest version of the app.
+* Transfer the APK to your Android device. [A tutorial on how to do this can be found here.](https://support.google.com/android/answer/9064445?hl=en)
+* On your device, enable "Install unknown apps" (Settings → Security/Privacy → allow your file manager or browser).
+* Open the APK file and install it.
+* Launch the app from your app drawer.
 
 ---
 
@@ -73,6 +64,25 @@ Tap the "Now Playing" bar at the bottom to expand it into the full-screen Focus 
 *   **Custom Shuffle Logic**: Visit the Settings menu to change how your music is shuffled, choosing between Fisher-Yates, True Random, or the clumping-resistant Fair Play algorithm.
     *   *Tip*: You can also select your shuffle algorithm in the Focus View using the dropdown on the bottom-left.
 *   **Sorting Your Music List**: Sorting by title isn't the only way to sort your library: by clicking the three bars on the top-right corner of your screen, you can choose to sort by title, artist name, or album name.
+
+---
+
+## Developer Setup & Deployment
+
+### Prerequisites
+*   **Android SDK**: API 24 (Nougat) or higher.
+*   **Build Tool**: Android Studio (modern releases) with Gradle.
+
+### Installation
+1.  Clone the repository.
+2.  Open in Android Studio and perform a Gradle Sync.
+3.  Deploy to an emulator or physical device.
+
+### Populating the Library
+To test the scanning engine on an emulator:
+1.  Drag any `.mp3` or `.m4a` file onto the emulator window.
+2.  The file will land in `/sdcard/Download`.
+3.  Use the **Refresh Library** menu item in BeatBirdie to trigger the `MediaStore` indexer.
 
 ---
 
