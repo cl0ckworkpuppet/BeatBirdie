@@ -78,10 +78,10 @@ To test the scanning engine on an emulator:
 
 ## Technical Stack
 
-*   **Language**: Java (Modern Android standards)
-*   **Audio Engine**: ExoPlayer / MediaPlayer (Ensures support for various codecs).
-*   **Database**: Android MediaStore API (Hardware-accelerated file discovery).
-*   **UI Framework**: Material Design 3 / ConstraintLayout.
+*   **Language**: Java
+*   **Audio Engine**: ExoPlayer
+*   **Database**: Android MediaStore API
+*   **UI Framework**: Material Design 3 / ConstraintLayout
 
 ---
 
