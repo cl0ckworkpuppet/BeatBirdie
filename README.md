@@ -4,10 +4,10 @@ BeatBirdie is a high-performance local music player for Android that bridges the
 
 ---
 
-## Key Product Pillars
+## Highlighted Features
 
 ### 1. Advanced Shuffling Algorithms
-Unlike standard players that use basic randomization or forces one type of shuffling strategy that may not work for all users, BeatBirdie features a custom Shuffle Algorithm Suite. Users can choose how they want to experience their music:
+Unlike standard players that use basic randomization or forces one type of shuffling strategy that may not work for all users, BeatBirdie features a custom Shuffle Algorithm selection tool. Users can choose how they want to experience their music:
 *   **Fisher-Yates**: Walks through your music list and swaps each song with another song, chosen randomly.
 *   **True Random**: Gives each song a random spot in line, and then plays them in that order.
 *   **Fair Play**: Ensures a balanced variety by preventing the same artist or album from playing too frequently in a row.
