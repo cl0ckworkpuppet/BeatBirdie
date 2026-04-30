@@ -32,6 +32,10 @@ For those without Android Studio on their computer, you can get this app on your
 * Open the APK file and install it.
 * Launch the app from your app drawer.
 
+### Installation Requirements
+* **Storage Size:** 10 MB
+* **Minimum Version:** Android 5.0 or higher *(Recommended: Android 13 or higher.)*
+
 ---
 
 ## User First-Time Setup & Use
