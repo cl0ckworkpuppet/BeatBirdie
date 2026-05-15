@@ -38,13 +38,12 @@ public class PlaybackHandlerTest {
         Uri testUri = Uri.fromFile(testFile);
         List<Song> songs = new ArrayList<>();
         // Fixed: The Song constructor requires 6 arguments: title, artist, album, uri, albumId (long), and duration (int).
-        songs.add(new Song("Test Song", "Test Artist", "Test Album", testUri, 0L, 0));
+        songs.add(new Song("Test Song", "Test Artist", "Test Album", testUri, "test_path", 0, 0));
 
         // Test setting the song
         // We call playSong, which internally sets the current song.
         // Even if MediaPlayer fails to play the dummy data, the current song should be set.
         PlaybackHandler.playSong(context, songs, 0);
-        [
         // Verify current song state
         Song current = PlaybackHandler.getCurrentSong();
         assertNotNull("Current song should ]be set in PlaybackHandler", current);
