@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -54,6 +55,41 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     private TextView totalTimeText;
     private QueueAdapter queueAdapter;
     private RecyclerView queueRecyclerView;
+
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        getMenuInflater().inflate(R.menu.now_playing_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        } else if (item.getItemId() == R.id.action_blacklist) {
+            confirmBlacklist();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void confirmBlacklist() {
+        Song currentSong = PlaybackHandler.getCurrentSong();
+        if (currentSong == null) return;
+
+        new AlertDialog.Builder(this)
+                .setTitle("Blacklist Song")
+                .setMessage("Are you sure you want to blacklist \"" + currentSong.getTitle() + "\"? It will be removed from your library and skipped.")
+                .setPositiveButton("Blacklist", (dialog, which) -> {
+                    BlacklistManager.add(this, currentSong.getPath());
+                    Toast.makeText(this, "Song blacklisted.", Toast.LENGTH_SHORT).show();
+                    PlaybackHandler.next(this); // Skip to next song
+                    updateUI();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
 
     @Override
     public boolean onSupportNavigateUp() {

@@ -16,6 +16,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
 
     private List<Song> songs;
     private OnSongClickListener listener;
+    private OnSongLongClickListener longClickListener;
     private String sortType = "title";
 
     public void setSortType(String sortType) {
@@ -26,16 +27,21 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
         void onSongClick(int position);
     }
 
-    public SongAdapter(List<Song> songs, OnSongClickListener listener) {
+    public interface OnSongLongClickListener {
+        void onSongLongClick(int position);
+    }
+
+    public SongAdapter(List<Song> songs, OnSongClickListener listener, OnSongLongClickListener longClickListener) {
         this.songs = songs;
         this.listener = listener;
+        this.longClickListener = longClickListener;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView title, artist;
         ImageView albumCover;
 
-        public ViewHolder(View view, final OnSongClickListener listener) {
+        public ViewHolder(View view, final OnSongClickListener listener, final OnSongLongClickListener longClickListener) {
             super(view);
             title = view.findViewById(R.id.songTitle);
             artist = view.findViewById(R.id.songArtist);
@@ -49,6 +55,17 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
                     }
                 }
             });
+
+            view.setOnLongClickListener(v -> {
+                if (longClickListener != null) {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        longClickListener.onSongLongClick(position);
+                        return true;
+                    }
+                }
+                return false;
+            });
         }
     }
 
@@ -56,7 +73,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.song_box, parent, false);
-        return new ViewHolder(view, listener);
+        return new ViewHolder(view, listener, longClickListener);
     }
 
     @Override

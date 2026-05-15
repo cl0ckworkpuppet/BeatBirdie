@@ -2,10 +2,12 @@ package com.example.it391_project_beatbirdie_for_android;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.preference.PreferenceManager;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
@@ -69,8 +71,23 @@ public class PlaybackHandler {
         if (playlist == null || index < 0 || index >= playlist.size()) return;
 
         currentPlaylist = new ArrayList<>(playlist);
+        // Instead of just generating order and playing, we ensure the selected song is at the front
+        // of a NEW shuffle if shuffle is enabled, or just at its position in Default mode.
         generatePlaybackOrder(index);
+        
+        if (!alg.equals("Default")) {
+            // Move the selected song to the front of the playback order
+            moveOrderIndexToFront(orderIndex);
+        }
+        
         playCurrent(context);
+    }
+
+    private static void moveOrderIndexToFront(int indexInOrder) {
+        if (playbackOrder == null || indexInOrder < 0 || indexInOrder >= playbackOrder.size()) return;
+        Integer val = playbackOrder.remove(indexInOrder);
+        playbackOrder.add(0, val);
+        orderIndex = 0;
     }
 
     /**
@@ -78,7 +95,7 @@ public class PlaybackHandler {
      * Synchronizes the playback order to keep playing the same song.
      */
     public static void updatePlaylist(List<Song> newList) {
-        if (newList == null || currentPlaylist == null) return;
+        if (newList == null) return;
 
         // Remember what we're currently playing
         Song currentSong = getCurrentSong();
@@ -86,37 +103,42 @@ public class PlaybackHandler {
         // Update the source list
         currentPlaylist = new ArrayList<>(newList);
 
-        // If something is playing, we need to find its new index in the source list
-        // and update the playbackOrder so it points to the correct items.
-        if (currentSong != null && playbackOrder != null) {
-            // Find current song's new index in the source list
-            int newGlobalIndex = -1;
+        // Find current song's new index in the source list
+        int newGlobalIndex = -1;
+        if (currentSong != null) {
             for (int i = 0; i < currentPlaylist.size(); i++) {
                 if (currentPlaylist.get(i).getUri().equals(currentSong.getUri())) {
                     newGlobalIndex = i;
                     break;
                 }
             }
+        }
 
-            if (newGlobalIndex != -1) {
-                // We basically need to re-generate the order but keep the current song where it is in the queue
-                // For simplicity, if we re-sort the main list, we just re-sync the indices.
-                // In "Default" (no shuffle) mode, the queue IS the list.
-                if (alg.equals("Default")) {
-                    playbackOrder.clear();
-                    for (int i = 0; i < currentPlaylist.size(); i++) {
-                        playbackOrder.add(i);
-                    }
-                    orderIndex = newGlobalIndex;
-                } else {
-                    // In shuffle modes, we keep the shuffle order as is, but update the pointers
-                    // to the new global indices in the source list.
-                    // This is complex because the source list changed.
-                    // Simplest fix for the "discrepancy" bug: re-generate the shuffle order starting from the current song.
-                    generatePlaybackOrder(newGlobalIndex);
+        if (newGlobalIndex != -1) {
+            // Re-sync the queue based on the new list but keeping the current song
+            if (alg.equals("Default")) {
+                playbackOrder = new ArrayList<>();
+                for (int i = 0; i < currentPlaylist.size(); i++) {
+                    playbackOrder.add(i);
                 }
+                orderIndex = newGlobalIndex;
+            } else {
+                generatePlaybackOrder(newGlobalIndex);
+            }
+        } else {
+            // Current song is gone or nothing was playing; reset queue
+            if (!currentPlaylist.isEmpty()) {
+                generatePlaybackOrder(0);
+                // If something was playing, we might want to move to the new first song.
+                // playCurrent(appContext) would do that, but usually updatePlaylist is called 
+                // during UI updates, so we let the user decide or the failsafe handle it.
+            } else {
+                playbackOrder = new ArrayList<>();
+                orderIndex = -1;
+                if (player != null) player.stop();
             }
         }
+        notifyQueueModified();
     }
 
     private static void playCurrent(Context context) {
@@ -124,6 +146,20 @@ public class PlaybackHandler {
 
         int songIndex = playbackOrder.get(orderIndex);
         Song song = currentPlaylist.get(songIndex);
+
+        // Check for invalid/corrupted song or filtered song
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context != null ? context : appContext);
+        int minDurationThreshold = Integer.parseInt(prefs.getString("filter_duration", "0"));
+
+        if (song.getDuration() <= 0 || song.getDuration() < minDurationThreshold) {
+            String reason = song.getDuration() <= 0 ? "invalid" : "too short";
+            Log.w(TAG, "Skipping " + reason + " song: " + song.getTitle());
+            if (context != null) {
+                android.widget.Toast.makeText(context, "Skipping " + reason + " song: " + song.getTitle(), android.widget.Toast.LENGTH_SHORT).show();
+            }
+            next(context != null ? context : appContext);
+            return;
+        }
 
         Log.d(TAG, "Playing song: " + song.getTitle());
 

@@ -31,4 +31,18 @@
         <item>dark</item>
     </string-array>
 
+    <string-array name="duration_filter_entries">
+        <item>Off</item>
+        <item>Less than 15 seconds</item>
+        <item>Less than 30 seconds</item>
+        <item>Less than 1 minute</item>
+    </string-array>
+
+    <string-array name="duration_filter_values">
+        <item>0</item>
+        <item>15000</item>
+        <item>30000</item>
+        <item>60000</item>
+    </string-array>
+
 </resources>

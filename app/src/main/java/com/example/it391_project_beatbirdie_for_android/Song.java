@@ -12,14 +12,16 @@ public class Song {
     private String artist;
     private String album;
     private Uri uri; // The unique content URI used to play the file via MediaPlayer
+    private String path; // The absolute file path on disk
     private long albumId;
     private int duration;
 
-    public Song(String title, String artist, String album, Uri uri, long albumId, int duration) {
+    public Song(String title, String artist, String album, Uri uri, String path, long albumId, int duration) {
         this.title = title;
         this.artist = artist;
         this.album = album;
         this.uri = uri;
+        this.path = path;
         this.albumId = albumId;
         this.duration = duration;
     }
@@ -37,6 +39,8 @@ public class Song {
     }
 
     public Uri getUri() { return uri; }
+
+    public String getPath() { return path; }
 
     public long getAlbumId() {
         return albumId;

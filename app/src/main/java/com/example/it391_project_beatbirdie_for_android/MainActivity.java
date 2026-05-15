@@ -139,6 +139,10 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
      */
     private void loadSongs() {
         songList.clear();
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        int minDuration = Integer.parseInt(prefs.getString("filter_duration", "0"));
+
         Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         String[] projection = {
                 MediaStore.Audio.Media._ID,
@@ -147,7 +151,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 MediaStore.Audio.Media.ALBUM,
                 MediaStore.Audio.Media.DISPLAY_NAME,
                 MediaStore.Audio.Media.ALBUM_ID,
-                MediaStore.Audio.Media.DURATION
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.DATA
         };
 
         // mediastore sorting is case sensitive. removed params and replaced with null when appropriate
@@ -163,6 +168,12 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 String fileName = cursor.getString(4);
                 long albumId = cursor.getLong(5);
                 int duration = cursor.getInt(6);
+                String path = cursor.getString(7);
+
+                // Filter out songs that are too short or blacklisted
+                if (duration < minDuration || BlacklistManager.isBlacklisted(this, path)) {
+                    continue;
+                }
 
                 // Fallback to filename if metadata is missing
                 if (title == null || title.isEmpty()) {
@@ -178,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 Uri contentUri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
                 );
-                songList.add(new Song(title, artist, album, contentUri, albumId, duration));
+                songList.add(new Song(title, artist, album, contentUri, path, albumId, duration));
             }
             cursor.close();
         }
@@ -204,6 +215,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         if (adapter != null) {
             adapter.notifyDataSetChanged();
         }
+        // Update the playback handler's internal playlist to match the filtered/sorted list
+        PlaybackHandler.updatePlaylist(songList);
     }
 
     @Override
@@ -310,6 +323,19 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         }
     }
 
+    private void showBlacklistDialog(Song song) {
+        new AlertDialog.Builder(this)
+                .setTitle("Blacklist Song")
+                .setMessage("Are you sure you want to blacklist \"" + song.getTitle() + "\"? It will be removed from your library.")
+                .setPositiveButton("Blacklist", (dialog, which) -> {
+                    BlacklistManager.add(this, song.getPath());
+                    loadSongs(); // Refresh the list
+                    Toast.makeText(this, "Song blacklisted. Manage in Settings.", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void applyKeepScreenOn() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean keepOn = prefs.getBoolean("lock_screen_on", false);
@@ -391,6 +417,9 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             // When a song is clicked, start playing it
             PlaybackHandler.playSong(MainActivity.this, songList, position);
             updateNowPlayingBar();
+        }, position -> {
+            // When a song is long-clicked, show blacklist confirmation
+            showBlacklistDialog(songList.get(position));
         });
         recyclerView.setAdapter(adapter);
 

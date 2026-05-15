@@ -44,10 +44,10 @@ public class PlaybackHandlerTest {
         // We call playSong, which internally sets the current song.
         // Even if MediaPlayer fails to play the dummy data, the current song should be set.
         PlaybackHandler.playSong(context, songs, 0);
-        
+        [
         // Verify current song state
         Song current = PlaybackHandler.getCurrentSong();
-        assertNotNull("Current song should be set in PlaybackHandler", current);
+        assertNotNull("Current song should ]be set in PlaybackHandler", current);
         assertEquals("Test Song", current.getTitle());
         assertEquals("Test Artist", current.getArtist());
 

@@ -2,6 +2,8 @@ package com.example.it391_project_beatbirdie_for_android;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.WindowManager;
 
@@ -38,6 +40,15 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
         }
 
+        Preference blacklistPref = findPreference("manage_blacklist");
+        if (blacklistPref != null) {
+            blacklistPref.setOnPreferenceClickListener(preference -> {
+                Intent intent = new Intent(getContext(), BlacklistActivity.class);
+                startActivity(intent);
+                return true;
+            });
+        }
+
         ListPreference themePref = findPreference("dark_mode");
         if (themePref != null) {
             themePref.setOnPreferenceChangeListener((preference, newValue) -> {
@@ -60,6 +71,17 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 }
                 return true;
             });
+        }
+
+        Preference versionPref = findPreference("version_info");
+        if (versionPref != null) {
+            try {
+                PackageInfo pInfo = requireContext().getPackageManager().getPackageInfo(requireContext().getPackageName(), 0);
+                String version = pInfo.versionName;
+                versionPref.setSummary(version);
+            } catch (PackageManager.NameNotFoundException e) {
+                versionPref.setSummary("Unknown");
+            }
         }
     }
 

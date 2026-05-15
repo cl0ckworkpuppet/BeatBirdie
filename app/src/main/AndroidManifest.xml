@@ -26,6 +26,9 @@
         android:theme="@style/Theme.IT391_PROJECT_BeatBirdie_for_Android">
 
         <activity
+            android:name=".BlacklistActivity"
+            android:exported="false" />
+        <activity
             android:name=".ShuffleAlgorithmsActivity"
             android:exported="false" />
         <activity

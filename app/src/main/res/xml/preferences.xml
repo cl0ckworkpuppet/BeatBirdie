@@ -10,11 +10,24 @@
         android:entryValues="@array/theme_values"
         android:defaultValue="default" />
 
+    <ListPreference
+        android:key="filter_duration"
+        android:title="Filter by Duration"
+        android:summary="Hide songs shorter than a certain duration"
+        android:entries="@array/duration_filter_entries"
+        android:entryValues="@array/duration_filter_values"
+        android:defaultValue="0" />
+
     <Preference
         android:key="shuffle_algorithms"
         android:title="Shuffling Algorithms"
         android:summary="Change the way your music is shuffled"
         android:fragment="com.example.it391_project_beatbirdie_for_android.ShuffleInfoFragment"/>
+
+    <Preference
+        android:key="manage_blacklist"
+        android:title="Manage Blacklist"
+        android:summary="View and restore blacklisted songs"/>
 
     <!-- allow users to keep their screen on while the app is in use -->
     <SwitchPreferenceCompat
@@ -28,5 +41,10 @@
         android:title="Pause on Disconnect"
         android:summary="Automatically pause music when headphones are disconnected"
         android:defaultValue="true" />
+
+    <Preference
+        android:key="version_info"
+        android:title="Version"
+        android:summary="Unknown" />
 
 </androidx.preference.PreferenceScreen>
