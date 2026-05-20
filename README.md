@@ -70,7 +70,7 @@ Tap the "Now Playing" bar at the bottom to expand it into the full-screen Focus 
     *   *Tip*: You can also select your shuffle algorithm in the Focus View using the dropdown on the bottom-left.
 *   **Sorting Your Music List**: Sorting by title isn't the only way to sort your library: by clicking the three bars on the top-right corner of your screen, you can choose to sort by title, artist name, or album name.
 *   **Blacklisting Files**: If you have an audio file that you don't want playing alongside your music, you can tap and hold on the song you want to blacklist (or you can press the meatball menu on the top right corner of the Focus View). This will prevent the song from playing in your shuffled queue, and will remove it from your library.
-   *   *Tip*: Blacklisted your favorite song by accident? Head to the Settings menu to manage your blacklist and bring it back!
+    *   *Tip*: Blacklisted your favorite song by accident? Head to the Settings menu to manage your blacklist and bring it back!
 
 ---
 
