@@ -23,10 +23,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -59,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
     private LinearLayout nowPlayingBar;
     private final List<Song> songList = new ArrayList<>();
     private SongAdapter adapter;
+    private androidx.appcompat.widget.SearchView searchView;
 
     @Override
     public void onSongChanged() {
@@ -213,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         });
 
         if (adapter != null) {
-            adapter.notifyDataSetChanged();
+            adapter.updateList(songList);
         }
         // Update the playback handler's internal playlist to match the filtered/sorted list
         PlaybackHandler.updatePlaylist(songList);
@@ -247,7 +250,10 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             PlaybackHandler.updatePlaylist(songList);
             if (adapter != null) {
                 adapter.setSortType("title");
-                adapter.notifyDataSetChanged();
+                adapter.updateList(songList);
+                if (searchView != null && !searchView.getQuery().toString().isEmpty()) {
+                    adapter.filter(searchView.getQuery().toString());
+                }
             }
             return true;
         }
@@ -265,7 +271,10 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             PlaybackHandler.updatePlaylist(songList);
             if (adapter != null) {
                 adapter.setSortType("artist");
-                adapter.notifyDataSetChanged();
+                adapter.updateList(songList);
+                if (searchView != null && !searchView.getQuery().toString().isEmpty()) {
+                    adapter.filter(searchView.getQuery().toString());
+                }
             }
             return true;
         }
@@ -283,7 +292,10 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             PlaybackHandler.updatePlaylist(songList);
             if (adapter != null) {
                 adapter.setSortType("album");
-                adapter.notifyDataSetChanged();
+                adapter.updateList(songList);
+                if (searchView != null && !searchView.getQuery().toString().isEmpty()) {
+                    adapter.filter(searchView.getQuery().toString());
+                }
             }
             return true;
         }
@@ -402,8 +414,15 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         nowPlayingArtist = findViewById(R.id.nowPlayingArtist);
         nowPlayingCover = findViewById(R.id.nowPlayingCover);
         playPause = findViewById(R.id.btnPlayPause);
+        searchView = findViewById(R.id.searchView);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.coordinatorLayout), (v, insets) -> {
+            boolean imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+            // If the keyboard is dismissed and search is open but empty, close the search bar too
+            if (!imeVisible && searchView != null && !searchView.isIconified() && searchView.getQuery().length() == 0) {
+                searchView.setIconified(true);
+                searchView.clearFocus();
+            }
             androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
@@ -414,12 +433,17 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         adapter = new SongAdapter(songList, position -> {
-            // When a song is clicked, start playing it
-            PlaybackHandler.playSong(MainActivity.this, songList, position);
-            updateNowPlayingBar();
+            // Use the adapter's current list (which might be filtered)
+            List<Song> currentList = adapter.getSongs();
+            if (position >= 0 && position < currentList.size()) {
+                PlaybackHandler.playSong(MainActivity.this, currentList, position);
+                updateNowPlayingBar();
+            }
         }, position -> {
-            // When a song is long-clicked, show blacklist confirmation
-            showBlacklistDialog(songList.get(position));
+            List<Song> currentList = adapter.getSongs();
+            if (position >= 0 && position < currentList.size()) {
+                showBlacklistDialog(currentList.get(position));
+            }
         });
         recyclerView.setAdapter(adapter);
 
@@ -436,6 +460,36 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
 
         toolbar.setNavigationOnClickListener(v -> {
             startActivity(new Intent(this, SettingsActivity.class));
+        });
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                adapter.filter(newText);
+                return true;
+            }
+        });
+
+        // Handle back gesture for search: collapse the bar immediately
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (searchView != null && !searchView.isIconified()) {
+                    // Calling setIconified(true) twice is a reliable way to clear text AND collapse
+                    searchView.setIconified(true);
+                    searchView.setIconified(true);
+                    searchView.clearFocus();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                    setEnabled(true);
+                }
+            }
         });
 
         // Navigate to the full-screen player when bar is tapped

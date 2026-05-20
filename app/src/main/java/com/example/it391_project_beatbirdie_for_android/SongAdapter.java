@@ -9,12 +9,14 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import java.util.ArrayList;
 import java.util.List;
 import me.zhanghai.android.fastscroll.PopupTextProvider;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> implements PopupTextProvider {
 
     private List<Song> songs;
+    private List<Song> songsFull; // Full list for filtering
     private OnSongClickListener listener;
     private OnSongLongClickListener longClickListener;
     private String sortType = "title";
@@ -33,8 +35,15 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
 
     public SongAdapter(List<Song> songs, OnSongClickListener listener, OnSongLongClickListener longClickListener) {
         this.songs = songs;
+        this.songsFull = new ArrayList<>(songs); // Initialize full list
         this.listener = listener;
         this.longClickListener = longClickListener;
+    }
+
+    public void updateList(List<Song> newList) {
+        this.songs = newList;
+        this.songsFull = new ArrayList<>(newList);
+        notifyDataSetChanged();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -124,8 +133,30 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
         }
     }
 
+    public List<Song> getSongs() {
+        return songs;
+    }
+
     @Override
     public int getItemCount() {
         return songs.size();
+    }
+
+    public void filter(String query) {
+        List<Song> filteredList = new ArrayList<>();
+        if (query == null || query.isEmpty()) {
+            filteredList.addAll(songsFull);
+        } else {
+            String filterPattern = query.toLowerCase().trim();
+            for (Song song : songsFull) {
+                if (song.getTitle().toLowerCase().contains(filterPattern) ||
+                    song.getArtist().toLowerCase().contains(filterPattern) ||
+                    song.getAlbum().toLowerCase().contains(filterPattern)) {
+                    filteredList.add(song);
+                }
+            }
+        }
+        songs = filteredList;
+        notifyDataSetChanged();
     }
 }

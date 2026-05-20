@@ -128,10 +128,7 @@ public class PlaybackHandler {
         } else {
             // Current song is gone or nothing was playing; reset queue
             if (!currentPlaylist.isEmpty()) {
-                generatePlaybackOrder(0);
-                // If something was playing, we might want to move to the new first song.
-                // playCurrent(appContext) would do that, but usually updatePlaylist is called 
-                // during UI updates, so we let the user decide or the failsafe handle it.
+                generatePlaybackOrder(-1);
             } else {
                 playbackOrder = new ArrayList<>();
                 orderIndex = -1;
@@ -251,7 +248,7 @@ public class PlaybackHandler {
                 }
             }
         } else {
-            orderIndex = 0;
+            orderIndex = -1;
         }
 
         playbackOrder = newOrder;
