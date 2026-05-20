@@ -50,6 +50,7 @@ When you open BeatBirdie for the first time, the app initiates its onboarding:
 With permissions granted, you are taken to the main library screen:
 *   **The Song List**: All discovered audio tracks are displayed in a clean list, sorted alphabetically by title.
 *   **Smart Metadata**: The app displays the song title, artist, album name, and album art. If a file is missing tags, BeatBirdie automatically uses the filename as the title and labels the artist as "Unknown Artist" so no track is left behind. If a file doesn't have album art, a placeholder image will be used.
+*   **Searching Your Music**: Can't find what you're looking for by scrolling? Use the search bar at the top of the screen to search for exactly what song you want.
 
 ### 3. Playing Your First Song
 *   **Instant Playback**: Tap any song in the list to start listening immediately.
@@ -68,6 +69,8 @@ Tap the "Now Playing" bar at the bottom to expand it into the full-screen Focus 
 *   **Custom Shuffle Logic**: Visit the Settings menu to change how your music is shuffled, choosing between Fisher-Yates, True Random, or the clumping-resistant Fair Play algorithm.
     *   *Tip*: You can also select your shuffle algorithm in the Focus View using the dropdown on the bottom-left.
 *   **Sorting Your Music List**: Sorting by title isn't the only way to sort your library: by clicking the three bars on the top-right corner of your screen, you can choose to sort by title, artist name, or album name.
+*   **Blacklisting Files**: If you have an audio file that you don't want playing alongside your music, you can tap and hold on the song you want to blacklist (or you can press the meatball menu on the top right corner of the Focus View). This will prevent the song from playing in your shuffled queue, and will remove it from your library.
+   *   *Tip*: Blacklisted your favorite song by accident? Head to the Settings menu to manage your blacklist and bring it back!
 
 ---
 
