@@ -178,8 +178,21 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 int duration = cursor.getInt(6);
                 String path = cursor.getString(7);
 
-                // Filter out songs that are too short or blacklisted
-                if (duration < minDuration || BlacklistManager.isBlacklisted(this, path)) {
+                // If duration is 0, try to retrieve it manually (common for some formats like MP2/WMA)
+                if (duration <= 0 && path != null) {
+                    try (android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever()) {
+                        retriever.setDataSource(path);
+                        String durStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+                        if (durStr != null) {
+                            duration = Integer.parseInt(durStr);
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to manually retrieve duration for: " + path);
+                    }
+                }
+
+                // Filter out songs that are too short, blacklisted, or unsupported legacy formats (like MP2/WMA)
+                if (duration < minDuration || BlacklistManager.isBlacklisted(this, path) || (path != null && (path.toLowerCase().endsWith(".mp2") || path.toLowerCase().endsWith(".wma")))) {
                     continue;
                 }
 
@@ -224,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             adapter.updateList(songList);
         }
         // Update the playback handler's internal playlist to match the filtered/sorted list
-        PlaybackHandler.updatePlaylist(songList);
+        PlaybackHandler.updatePlaylist(songList, -1);
     }
 
     @Override
@@ -251,7 +264,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 if (g1 != g2) return Integer.compare(g1, g2);
                 return t1.compareToIgnoreCase(t2);
             });
-            PlaybackHandler.updatePlaylist(songList);
+            PlaybackHandler.updatePlaylist(songList, -1);
             if (adapter != null) {
                 adapter.setSortType("title");
                 adapter.updateList(songList);
@@ -272,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 if (g1 != g2) return Integer.compare(g1, g2);
                 return a1.compareToIgnoreCase(a2);
             });
-            PlaybackHandler.updatePlaylist(songList);
+            PlaybackHandler.updatePlaylist(songList, -1);
             if (adapter != null) {
                 adapter.setSortType("artist");
                 adapter.updateList(songList);
@@ -293,7 +306,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 if (g1 != g2) return Integer.compare(g1, g2);
                 return al1.compareToIgnoreCase(al2);
             });
-            PlaybackHandler.updatePlaylist(songList);
+            PlaybackHandler.updatePlaylist(songList, -1);
             if (adapter != null) {
                 adapter.setSortType("album");
                 adapter.updateList(songList);
@@ -339,6 +352,76 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         }
     }
 
+    private void showSongOptions(Song song, View view) {
+        android.widget.PopupMenu popup = new android.widget.PopupMenu(this, view);
+        popup.getMenu().add("Add to Playlist");
+        popup.getMenu().add("Blacklist");
+
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getTitle().equals("Add to Playlist")) {
+                showAddToPlaylistDialog(song);
+                return true;
+            } else if (item.getTitle().equals("Blacklist")) {
+                showBlacklistDialog(song);
+                return true;
+            }
+            return false;
+        });
+        popup.show();
+    }
+
+    private void showAddToPlaylistDialog(Song song) {
+        AppDatabase db = AppDatabase.getInstance(this);
+        List<Playlist> allPlaylists = db.playlistDao().getAllPlaylists();
+        List<Integer> existingPlaylistIds = db.playlistDao().getPlaylistIdsForSong(song.getPath());
+
+        List<Playlist> eligiblePlaylists = new ArrayList<>();
+        for (Playlist p : allPlaylists) {
+            if (!existingPlaylistIds.contains(p.getId())) {
+                eligiblePlaylists.add(p);
+            }
+        }
+
+        if (eligiblePlaylists.isEmpty()) {
+            Toast.makeText(this, "No eligible playlists found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] playlistNames = new String[eligiblePlaylists.size()];
+        for (int i = 0; i < eligiblePlaylists.size(); i++) {
+            playlistNames[i] = eligiblePlaylists.get(i).getName();
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Add to Playlist")
+                .setItems(playlistNames, (dialog, which) -> {
+                    Playlist selected = eligiblePlaylists.get(which);
+
+                    // Double check with a failsafe check
+                    if (db.playlistDao().isSongInPlaylist(selected.getId(), song.getPath())) {
+                        Toast.makeText(this, "Error: Song already in this playlist.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    db.playlistDao().addSongToPlaylist(new PlaylistSong(selected.getId(), song.getPath()));
+                    db.playlistDao().updateSongCount(selected.getId());
+                    
+                    // If the selected playlist is currently playing, update its queue
+                    if (PlaybackHandler.getPlayingPlaylistId() == selected.getId()) {
+                        List<String> paths = db.playlistDao().getSongPathsForPlaylist(selected.getId());
+                        List<Song> updatedSongs = new ArrayList<>();
+                        for (String path : paths) {
+                            Song s = getSongByPath(path);
+                            if (s != null) updatedSongs.add(s);
+                        }
+                        PlaybackHandler.updatePlaylist(updatedSongs, selected.getId());
+                    }
+                    
+                    Toast.makeText(this, "Added to " + selected.getName(), Toast.LENGTH_SHORT).show();
+                })
+                .show();
+    }
+
     private void showBlacklistDialog(Song song) {
         new AlertDialog.Builder(this)
                 .setTitle("Blacklist Song")
@@ -350,6 +433,57 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private Song getSongByPath(String path) {
+        if (BlacklistManager.isBlacklisted(this, path) || (path != null && (path.toLowerCase().endsWith(".mp2") || path.toLowerCase().endsWith(".wma")))) return null;
+
+        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        String[] projection = {
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.ALBUM_ID,
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.DISPLAY_NAME
+        };
+        String selection = MediaStore.Audio.Media.DATA + "=?";
+        String[] selectionArgs = {path};
+
+        try (Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                long id = cursor.getLong(0);
+                String title = cursor.getString(1);
+                String artist = cursor.getString(2);
+                String album = cursor.getString(3);
+                long albumId = cursor.getLong(4);
+                int duration = cursor.getInt(5);
+                String fileName = cursor.getString(6);
+
+                if (duration <= 0) {
+                    try (android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever()) {
+                        retriever.setDataSource(path);
+                        String durStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+                        if (durStr != null) {
+                            duration = Integer.parseInt(durStr);
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                int minDuration = Integer.parseInt(prefs.getString("filter_duration", "0"));
+                if (duration < minDuration) return null;
+
+                if (title == null || title.isEmpty()) title = fileName;
+                if (artist == null || artist.isEmpty() || artist.equals("<unknown>")) artist = "Unknown Artist";
+                if (album == null || album.isEmpty() || album.equals("<unknown>")) album = "Unknown Album";
+
+                Uri contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+                return new Song(title, artist, album, contentUri, path, albumId, duration);
+            }
+        }
+        return null;
     }
 
     private void applyKeepScreenOn() {
@@ -373,9 +507,16 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         super.onResume();
         applyKeepScreenOn();
         PlaybackHandler.addListener(this);
-        // Refresh library and UI state whenever the user returns to this screen
-        if (hasPermissions()) {
+        
+        // Only refresh if the list is empty or if explicitly requested from settings
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean refreshNeeded = prefs.getBoolean("refresh_needed", false);
+        
+        if (hasPermissions() && (songList.isEmpty() || refreshNeeded)) {
             loadSongs();
+            if (refreshNeeded) {
+                prefs.edit().putBoolean("refresh_needed", false).apply();
+            }
         }
         updateNowPlayingBar();
     }
@@ -432,7 +573,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             return insets;
         });
 
-        // Setup the list display
+        // Set up the list display
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -440,13 +581,13 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             // Use the adapter's current list (which might be filtered)
             List<Song> currentList = adapter.getSongs();
             if (position >= 0 && position < currentList.size()) {
-                PlaybackHandler.playSong(MainActivity.this, currentList, position);
+                PlaybackHandler.playSong(MainActivity.this, currentList, position, -1);
                 updateNowPlayingBar();
             }
         }, position -> {
             List<Song> currentList = adapter.getSongs();
             if (position >= 0 && position < currentList.size()) {
-                showBlacklistDialog(currentList.get(position));
+                showSongOptions(currentList.get(position), recyclerView.findViewHolderForAdapterPosition(position).itemView);
             }
         });
         recyclerView.setAdapter(adapter);

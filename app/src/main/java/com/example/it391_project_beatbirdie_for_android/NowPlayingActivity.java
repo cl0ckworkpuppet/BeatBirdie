@@ -1,6 +1,7 @@
 package com.example.it391_project_beatbirdie_for_android;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -68,13 +69,89 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            finish();
+            handleBackNavigation();
+            return true;
+        } else if (item.getItemId() == R.id.action_add_to_playlist) {
+            showAddToPlaylistDialog();
             return true;
         } else if (item.getItemId() == R.id.action_blacklist) {
             confirmBlacklist();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void handleBackNavigation() {
+        int playlistId = PlaybackHandler.getPlayingPlaylistId();
+        if (playlistId != -1) {
+            AppDatabase db = AppDatabase.getInstance(this);
+            Playlist playlist = db.playlistDao().getPlaylistById(playlistId);
+            if (playlist != null) {
+                Intent intent = new Intent(this, PlaylistDetailActivity.class);
+                intent.putExtra("playlist_id", playlist.getId());
+                intent.putExtra("playlist_name", playlist.getName());
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish();
+                return;
+            }
+        }
+        finish();
+    }
+
+    private void showAddToPlaylistDialog() {
+        Song currentSong = PlaybackHandler.getCurrentSong();
+        if (currentSong == null) return;
+
+        AppDatabase db = AppDatabase.getInstance(this);
+        List<Playlist> allPlaylists = db.playlistDao().getAllPlaylists();
+        List<Integer> existingPlaylistIds = db.playlistDao().getPlaylistIdsForSong(currentSong.getPath());
+
+        List<Playlist> eligiblePlaylists = new ArrayList<>();
+        for (Playlist p : allPlaylists) {
+            if (!existingPlaylistIds.contains(p.getId())) {
+                eligiblePlaylists.add(p);
+            }
+        }
+
+        if (eligiblePlaylists.isEmpty()) {
+            Toast.makeText(this, "No eligible playlists found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] playlistNames = new String[eligiblePlaylists.size()];
+        for (int i = 0; i < eligiblePlaylists.size(); i++) {
+            playlistNames[i] = eligiblePlaylists.get(i).getName();
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Add to Playlist")
+                .setItems(playlistNames, (dialog, which) -> {
+                    Playlist selected = eligiblePlaylists.get(which);
+                    
+                    // Double check with a failsafe check
+                    if (db.playlistDao().isSongInPlaylist(selected.getId(), currentSong.getPath())) {
+                        Toast.makeText(this, "Error: Song already in this playlist.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    db.playlistDao().addSongToPlaylist(new PlaylistSong(selected.getId(), currentSong.getPath()));
+                    db.playlistDao().updateSongCount(selected.getId());
+                    
+                    // If the selected playlist is currently playing, update its queue
+                    if (PlaybackHandler.getPlayingPlaylistId() == selected.getId()) {
+                        List<String> paths = db.playlistDao().getSongPathsForPlaylist(selected.getId());
+                        List<Song> updatedSongs = new ArrayList<>();
+                        for (String path : paths) {
+                            Song s = getSongByPath(path);
+                            if (s != null) updatedSongs.add(s);
+                        }
+                        PlaybackHandler.updatePlaylist(updatedSongs, selected.getId());
+                    }
+                    
+                    Toast.makeText(this, "Added to " + selected.getName(), Toast.LENGTH_SHORT).show();
+                })
+                .show();
     }
 
     private void confirmBlacklist() {
@@ -87,7 +164,10 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
                 .setPositiveButton("Blacklist", (dialog, which) -> {
                     BlacklistManager.add(this, currentSong.getPath());
                     Toast.makeText(this, "Song blacklisted.", Toast.LENGTH_SHORT).show();
-                    PlaybackHandler.next(this); // Skip to next song
+                    // Update current playlist in handler. updatePlaylist will handle the skip if it was playing.
+                    List<Song> queue = PlaybackHandler.getFullQueue();
+                    queue.remove(currentSong);
+                    PlaybackHandler.updatePlaylist(queue, PlaybackHandler.getPlayingPlaylistId());
                     updateUI();
                 })
                 .setNegativeButton("Cancel", null)
@@ -496,6 +576,34 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
                 .error(R.drawable.ic_music_note))
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(cover);
+    }
+
+    private Song getSongByPath(String path) {
+        android.net.Uri uri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        String[] projection = {
+                android.provider.MediaStore.Audio.Media._ID,
+                android.provider.MediaStore.Audio.Media.TITLE,
+                android.provider.MediaStore.Audio.Media.ARTIST,
+                android.provider.MediaStore.Audio.Media.ALBUM,
+                android.provider.MediaStore.Audio.Media.ALBUM_ID,
+                android.provider.MediaStore.Audio.Media.DURATION
+        };
+        String selection = android.provider.MediaStore.Audio.Media.DATA + "=?";
+        String[] selectionArgs = {path};
+
+        try (android.database.Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                long id = cursor.getLong(0);
+                String title = cursor.getString(1);
+                String artist = cursor.getString(2);
+                String album = cursor.getString(3);
+                long albumId = cursor.getLong(4);
+                int duration = cursor.getInt(5);
+                android.net.Uri contentUri = android.content.ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+                return new Song(title, artist, album, contentUri, path, albumId, duration);
+            }
+        }
+        return null;
     }
 
     private  String formatTime (int ms) {

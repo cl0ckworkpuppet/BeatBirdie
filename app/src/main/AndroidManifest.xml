@@ -29,6 +29,9 @@
             android:name=".PlaylistActivity"
             android:exported="false" />
         <activity
+            android:name=".PlaylistDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".BlacklistActivity"
             android:exported="false" />
         <activity

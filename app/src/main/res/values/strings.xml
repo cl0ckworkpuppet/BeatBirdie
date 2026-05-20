@@ -3,4 +3,5 @@
     <string name="playlist_size_format">%d songs</string>
     <string name="playlists_title">Playlists</string>
     <string name="add_playlist">Add Playlist</string>
+    <string name="no_playlists_message">No playlists yet. Press the + button to create one!</string>
 </resources>

@@ -82,10 +82,10 @@ public class AudioCoverModel {
                 if (art != null) {
                     callback.onDataReady(new ByteArrayInputStream(art));
                 } else {
-                    callback.onLoadFailed(new Exception("No embedded art found"));
+                    callback.onDataReady(null);
                 }
             } catch (Exception e) {
-                callback.onLoadFailed(e);
+                callback.onDataReady(null);
             } finally {
                 try {
                     retriever.release();

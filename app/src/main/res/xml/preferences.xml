@@ -1,55 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- themes -->
-    <ListPreference
-        android:key="dark_mode"
-        android:title="Theme"
-        android:summary="Choose between light, dark, or system default"
-        android:entries="@array/theme_entries"
-        android:entryValues="@array/theme_values"
-        android:defaultValue="default" />
+    <androidx.preference.PreferenceCategory
+        android:title="Appearance"
+        app:iconSpaceReserved="false">
+        <ListPreference
+            android:key="dark_mode"
+            android:title="Theme"
+            android:summary="Choose between light, dark, or system default"
+            android:entries="@array/theme_entries"
+            android:entryValues="@array/theme_values"
+            android:defaultValue="default"
+            android:icon="@android:drawable/ic_menu_gallery" />
+    </androidx.preference.PreferenceCategory>
 
-    <ListPreference
-        android:key="filter_duration"
-        android:title="Filter by Duration"
-        android:summary="Hide songs shorter than a certain duration"
-        android:entries="@array/duration_filter_entries"
-        android:entryValues="@array/duration_filter_values"
-        android:defaultValue="0" />
+    <androidx.preference.PreferenceCategory
+        android:title="Library"
+        app:iconSpaceReserved="false">
+        <ListPreference
+            android:key="filter_duration"
+            android:title="Filter by Duration"
+            android:summary="Hide songs shorter than a certain duration"
+            android:entries="@array/duration_filter_entries"
+            android:entryValues="@array/duration_filter_values"
+            android:defaultValue="0"
+            android:icon="@android:drawable/ic_menu_recent_history" />
 
-    <Preference
-        android:key="shuffle_algorithms"
-        android:title="Shuffling Algorithms"
-        android:summary="Change the way your music is shuffled"
-        android:fragment="com.example.it391_project_beatbirdie_for_android.ShuffleInfoFragment"/>
+        <Preference
+            android:key="manage_blacklist"
+            android:title="Manage Blacklist"
+            android:summary="View and restore blacklisted songs"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel" />
 
-    <Preference
-        android:key="manage_blacklist"
-        android:title="Manage Blacklist"
-        android:summary="View and restore blacklisted songs"/>
+        <Preference
+            android:key="refresh_library"
+            android:title="Refresh Library"
+            android:summary="Scan for new or updated music files"
+            android:icon="@android:drawable/ic_popup_sync" />
+    </androidx.preference.PreferenceCategory>
 
-    <Preference
-        android:key="refresh_library"
-        android:title="Refresh Library"
-        android:summary="Scan for new or updated music files" />
+    <androidx.preference.PreferenceCategory
+        android:title="Playback"
+        app:iconSpaceReserved="false">
+        <Preference
+            android:key="shuffle_algorithms"
+            android:title="Shuffling Algorithms"
+            android:summary="Change the way your music is shuffled"
+            android:fragment="com.example.it391_project_beatbirdie_for_android.ShuffleInfoFragment"
+            android:icon="@android:drawable/ic_menu_sort_by_size" />
 
-    <!-- allow users to keep their screen on while the app is in use -->
-    <SwitchPreferenceCompat
-        android:key="lock_screen_on"
-        android:title="Keep Screen On"
-        android:summary="Keep screen on during playback"/>
+        <SwitchPreferenceCompat
+            android:key="lock_screen_on"
+            android:title="Keep Screen On"
+            android:summary="Keep screen on during playback"
+            android:icon="@android:drawable/ic_lock_lock" />
 
-    <!-- pause music when headphones are disconnected -->
-    <SwitchPreferenceCompat
-        android:key="pause_on_disconnect"
-        android:title="Pause on Disconnect"
-        android:summary="Automatically pause music when headphones are disconnected"
-        android:defaultValue="true" />
+        <SwitchPreferenceCompat
+            android:key="pause_on_disconnect"
+            android:title="Pause on Disconnect"
+            android:summary="Automatically pause music when headphones are disconnected"
+            android:defaultValue="true"
+            android:icon="@android:drawable/ic_lock_silent_mode" />
+    </androidx.preference.PreferenceCategory>
 
-    <com.example.it391_project_beatbirdie_for_android.LongClickPreference
-        android:key="version_info"
-        android:title="Version"
-        android:summary="Unknown" />
+    <androidx.preference.PreferenceCategory
+        android:title="About"
+        app:iconSpaceReserved="false">
+        <com.example.it391_project_beatbirdie_for_android.LongClickPreference
+            android:key="version_info"
+            android:title="Version"
+            android:summary="1.0.0"
+            android:icon="@android:drawable/ic_menu_info_details" />
+    </androidx.preference.PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

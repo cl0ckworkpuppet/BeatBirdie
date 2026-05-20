@@ -1,5 +1,6 @@
 package com.example.it391_project_beatbirdie_for_android;
 
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
 
     public interface OnPlaylistClickListener {
         void onPlaylistClick(Playlist playlist);
+        void onPlaylistLongClick(Playlist playlist, View view);
     }
 
     public PlaylistAdapter(List<Playlist> playlists, OnPlaylistClickListener listener) {
@@ -36,16 +38,27 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         Playlist playlist = playlists.get(position);
         holder.tvName.setText(playlist.getName());
         
-        String sizeText = holder.itemView.getContext().getString(R.string.playlist_size_format, playlist.getSize());
+        String sizeText = holder.itemView.getContext().getString(R.string.playlist_size_format, playlist.getSongCount());
         holder.tvSize.setText(sizeText);
 
-        if (playlist.getThumbnailUri() != null) {
+        if (playlist.getCustomThumbnailPath() != null) {
             Glide.with(holder.itemView.getContext())
-                    .load(playlist.getThumbnailUri())
-                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .load(playlist.getCustomThumbnailPath())
+                    .placeholder(R.drawable.ic_music_note)
                     .into(holder.ivThumbnail);
         } else {
-            holder.ivThumbnail.setImageResource(R.drawable.ic_launcher_foreground);
+            List<String> paths = AppDatabase.getInstance(holder.itemView.getContext()).playlistDao().getSongPathsForPlaylist(playlist.getId());
+            Uri coverUri = findEarliestSongWithCover(holder.itemView.getContext(), paths);
+            
+            if (coverUri != null) {
+                Glide.with(holder.itemView.getContext())
+                        .load(new AudioCoverModel(coverUri))
+                        .placeholder(R.drawable.ic_music_note)
+                        .error(R.drawable.ic_music_note)
+                        .into(holder.ivThumbnail);
+            } else {
+                holder.ivThumbnail.setImageResource(R.drawable.ic_music_note);
+            }
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -53,6 +66,52 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
                 listener.onPlaylistClick(playlist);
             }
         });
+
+        holder.itemView.setOnLongClickListener(v -> {
+            if (listener != null) {
+                listener.onPlaylistLongClick(playlist, v);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private Uri findEarliestSongWithCover(android.content.Context context, List<String> paths) {
+        if (paths == null || paths.isEmpty()) return null;
+        
+        android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever();
+        try {
+            for (String path : paths) {
+                try {
+                    retriever.setDataSource(path);
+                    byte[] art = retriever.getEmbeddedPicture();
+                    if (art != null) {
+                        return getSongUriByPath(context, path);
+                    }
+                } catch (Exception ignored) {
+                    // Skip songs that fail to load or have no art
+                }
+            }
+        } finally {
+            try {
+                retriever.release();
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    private Uri getSongUriByPath(android.content.Context context, String path) {
+        android.net.Uri uri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        String[] projection = {android.provider.MediaStore.Audio.Media._ID};
+        String selection = android.provider.MediaStore.Audio.Media.DATA + "=?";
+        String[] selectionArgs = {path};
+        try (android.database.Cursor cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                long id = cursor.getLong(0);
+                return android.content.ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+            }
+        }
+        return null;
     }
 
     @Override

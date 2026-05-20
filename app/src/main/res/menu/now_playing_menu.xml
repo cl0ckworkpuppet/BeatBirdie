@@ -2,7 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_add_to_playlist"
+        android:title="Add to Playlist"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_blacklist"
-        android:title="Remove Song"
+        android:title="Blacklist Song"
         app:showAsAction="never" />
 </menu>

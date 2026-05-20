@@ -53,12 +53,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         Preference refreshPref = findPreference("refresh_library");
         if (refreshPref != null) {
             refreshPref.setOnPreferenceClickListener(preference -> {
-                // We'll use a broadcast or direct call if we had a reference, 
-                // but since MainActivity is likely in the background, we can just 
-                // show a toast or set a flag. Better: use a common data loader.
-                // For now, let's trigger a Toast and we can implement the actual scan 
-                // via a shared event if needed, or just let MainActivity reload onResume.
-                Toast.makeText(getContext(), "Library will be refreshed on next return to main screen.", Toast.LENGTH_SHORT).show();
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(requireContext()).edit();
+                editor.putBoolean("refresh_needed", true);
+                editor.apply();
+                Toast.makeText(getContext(), "Library will be refreshed on return.", Toast.LENGTH_SHORT).show();
                 return true;
             });
         }
@@ -68,6 +66,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             themePref.setOnPreferenceChangeListener((preference, newValue) -> {
                 String themeValue = (String) newValue;
                 applyTheme(themeValue);
+                return true;
+            });
+        }
+
+        ListPreference durationPref = findPreference("filter_duration");
+        if (durationPref != null) {
+            durationPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(requireContext()).edit();
+                editor.putBoolean("refresh_needed", true);
+                editor.apply();
                 return true;
             });
         }
