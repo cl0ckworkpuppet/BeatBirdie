@@ -37,6 +37,7 @@ import android.media.MediaMetadataRetriever;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class NowPlayingActivity extends AppCompatActivity implements PlaybackHandler.PlaybackListener {
@@ -55,6 +56,8 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
     private TextView totalTimeText;
     private QueueAdapter queueAdapter;
     private RecyclerView queueRecyclerView;
+    private Spinner shuffleSpinner;
+    private String[] currentAlgorithms;
 
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
@@ -114,6 +117,27 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
                 refreshQueueData();
             }
         });
+    }
+
+    @Override
+    public void onError(String message) {
+        runOnUiThread(() -> {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            updateShuffleSpinnerSelection();
+        });
+    }
+
+    private void updateShuffleSpinnerSelection() {
+        if (shuffleSpinner == null || currentAlgorithms == null) return;
+        String currentAlg = PlaybackHandler.currentAlg();
+        for (int i = 0; i < currentAlgorithms.length; i++) {
+            if (currentAlgorithms[i].equals(currentAlg)) {
+                if (shuffleSpinner.getSelectedItemPosition() != i) {
+                    shuffleSpinner.setSelection(i);
+                }
+                break;
+            }
+        }
     }
 
     private void refreshQueueData() {
@@ -216,6 +240,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         applyKeepScreenOn();
         PlaybackHandler.addListener(this);
         updateUI();
+        setupShuffleSpinner();
         // Start the periodic update
         handler.post(updateSeekBar);
         if (repeatCheckbox != null) {
@@ -247,7 +272,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         totalTimeText = findViewById(R.id.totalTimeText);
         ImageButton skipButton = findViewById(R.id.skip);
         ImageButton rewindButton = findViewById(R.id.rewind);
-        Spinner shuffleSpinner = findViewById(R.id.shuffleSpinner);
+        shuffleSpinner = findViewById(R.id.shuffleSpinner);
         Button btnViewQueue = findViewById(R.id.btnViewQueue);
         SeekBar volumeSeekBar = findViewById(R.id.volumeSeekBar);
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -284,37 +309,6 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
-
-        // --- Shuffle Spinner Setup ---
-        String[] algorithms = {"Default", "Fisher-Yates", "True Random, No Repeats", "Fair Play"};
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this, 
-                android.R.layout.simple_spinner_item, algorithms);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        shuffleSpinner.setAdapter(spinnerAdapter);
-
-        // Sync spinner with current PlaybackHandler state
-        for (int i = 0; i < algorithms.length; i++) {
-            if (algorithms[i].equals(PlaybackHandler.currentAlg())) {
-                shuffleSpinner.setSelection(i);
-                break;
-            }
-        }
-
-        shuffleSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                PlaybackHandler.setAlg(algorithms[position]);
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-
-
-        // repeat checkbox (if checked, song loops)
-        repeatCheckbox.setChecked(PlaybackHandler.isLooping());
-        repeatCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            PlaybackHandler.setLooping(isChecked);
-        });
 
         // --- View Queue Setup ---
         btnViewQueue.setOnClickListener(v -> showQueueDialog());
@@ -368,6 +362,44 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
         };
         
         updateUI();
+    }
+
+    private void setupShuffleSpinner() {
+        if (shuffleSpinner == null) return;
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean experimentalEnabled = prefs.getBoolean("experimental_shuffle_enabled", false);
+
+        List<String> algorithmList = new ArrayList<>(Arrays.asList("*Play in Order", "Fisher-Yates", "True Random, No Repeats", "Fair Play", "Sattolo's Algorithm", "Casino Shuffle", "Prime-Step", "*Bit-Reversal"));
+        if (experimentalEnabled) {
+            algorithmList.add("EXPERIMENTAL SHUFFLE");
+        }
+        currentAlgorithms = algorithmList.toArray(new String[0]);
+
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, currentAlgorithms);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        shuffleSpinner.setAdapter(spinnerAdapter);
+
+        // Sync spinner with current PlaybackHandler state
+        for (int i = 0; i < currentAlgorithms.length; i++) {
+            if (currentAlgorithms[i].equals(PlaybackHandler.currentAlg())) {
+                shuffleSpinner.setSelection(i);
+                break;
+            }
+        }
+
+        shuffleSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedAlg = currentAlgorithms[position];
+                if (!selectedAlg.equals(PlaybackHandler.currentAlg())) {
+                    PlaybackHandler.setAlg(selectedAlg);
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
     }
 
     private void showQueueDialog() {

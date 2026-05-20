@@ -49,11 +49,7 @@ public class ShuffleAlgorithmAdapter extends RecyclerView.Adapter<ShuffleAlgorit
         holder.description.setText(algorithm.description);
 
         holder.itemView.setOnClickListener(v -> {
-            String selectedName = algorithm.name;
-            // The logic in ShuffleAlgorithmsActivity uses different names than PlaybackHandler's switch
-            if (selectedName.equals("Play in Order")) selectedName = "Default";
-
-            PlaybackHandler.setAlg(selectedName);
+            PlaybackHandler.setAlg(algorithm.name);
             notifyDataSetChanged();
             activity.finish();
         });

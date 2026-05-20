@@ -27,13 +27,14 @@ public class PlaybackHandler {
     private static List<Song> currentPlaylist;
     private static List<Integer> playbackOrder;
     private static int orderIndex = -1;
-    private static String alg = "Default";
+    private static String alg = "*Play in Order";
     private static boolean isLooping = false;
     private static Context appContext;
 
     public interface PlaybackListener {
         void onSongChanged();
         void onQueueModified();
+        void onError(String message);
     }
 
     private static final List<PlaybackListener> listeners = new ArrayList<>();
@@ -60,10 +61,29 @@ public class PlaybackHandler {
         }
     }
 
+    private static void notifyError(String message) {
+        for (PlaybackListener listener : new ArrayList<>(listeners)) {
+            listener.onError(message);
+        }
+    }
+
     public static void init(Context context) {
         appContext = context.getApplicationContext();
         android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext);
-        alg = prefs.getString("shuffle_alg", "Default");
+        alg = prefs.getString("shuffle_alg", "*Play in Order");
+        
+        // Migration and safety checks
+        if ("Default".equals(alg) || "Play in Order".equals(alg)) alg = "*Play in Order";
+        if ("Bit-Reversal".equals(alg)) alg = "*Bit-Reversal";
+        if ("Sattolo".equals(alg)) alg = "Sattolo's Algorithm";
+        if ("Casino".equals(alg)) alg = "Casino Shuffle";
+        
+        // Ensure experimental algorithm isn't used as a persistent default on boot
+        if ("EXPERIMENTAL SHUFFLE".equals(alg)) {
+            alg = "*Play in Order";
+            prefs.edit().putString("shuffle_alg", alg).apply();
+        }
+        
         isLooping = prefs.getBoolean("is_looping", false);
     }
 
@@ -75,7 +95,7 @@ public class PlaybackHandler {
         // of a NEW shuffle if shuffle is enabled, or just at its position in Default mode.
         generatePlaybackOrder(index);
         
-        if (!alg.equals("Default")) {
+        if (!alg.equals("*Play in Order")) {
             // Move the selected song to the front of the playback order
             moveOrderIndexToFront(orderIndex);
         }
@@ -116,7 +136,7 @@ public class PlaybackHandler {
 
         if (newGlobalIndex != -1) {
             // Re-sync the queue based on the new list but keeping the current song
-            if (alg.equals("Default")) {
+            if (alg.equals("*Play in Order")) {
                 playbackOrder = new ArrayList<>();
                 for (int i = 0; i < currentPlaylist.size(); i++) {
                     playbackOrder.add(i);
@@ -213,39 +233,57 @@ public class PlaybackHandler {
         int size = currentPlaylist.size();
         List<Integer> newOrder;
 
-        switch (alg) {
-            case "Fisher-Yates":
-                newOrder = ShuffleManager.fisherYatesShuffle(size);
-                break;
-            case "True Random, No Repeats":
-                newOrder = ShuffleManager.trueRandomNoRepeats(size);
-                break;
-            case "Fair Play":
-                newOrder = ShuffleManager.fairPlayShuffle(currentPlaylist);
-                break;
-            default:
-                newOrder = new ArrayList<>();
-                for (int i = 0; i < size; i++) {
-                    newOrder.add(i);
-                }
-                break;
+        try {
+            switch (alg) {
+                case "Fisher-Yates":
+                    newOrder = ShuffleManager.fisherYatesShuffle(size, startingSongIndex);
+                    break;
+                case "True Random, No Repeats":
+                    newOrder = ShuffleManager.trueRandomNoRepeats(size, startingSongIndex);
+                    break;
+                case "Fair Play":
+                    newOrder = ShuffleManager.fairPlayShuffle(currentPlaylist, startingSongIndex);
+                    break;
+                case "Sattolo's Algorithm":
+                    newOrder = ShuffleManager.sattoloShuffle(size, startingSongIndex);
+                    break;
+                case "Casino Shuffle":
+                    newOrder = ShuffleManager.casinoShuffle(size, startingSongIndex);
+                    break;
+                case "Prime-Step":
+                    newOrder = ShuffleManager.primeStepShuffle(size, startingSongIndex);
+                    break;
+                case "*Bit-Reversal":
+                    newOrder = ShuffleManager.bitReversalShuffle(size, startingSongIndex);
+                    break;
+                case "EXPERIMENTAL SHUFFLE":
+                    newOrder = ShuffleManager.cursedAwfulDogshitShuffle(size, startingSongIndex);
+                    break;
+                case "*Play in Order":
+                default:
+                    newOrder = new ArrayList<>();
+                    for (int i = 0; i < size; i++) {
+                        newOrder.add(i);
+                    }
+                    break;
+            }
+        } catch (Throwable t) {
+            Log.e(TAG, "Error generating playback order with algorithm: " + alg, t);
+            // Fallback to "Play in Order"
+            newOrder = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                newOrder.add(i);
+            }
+            alg = "*Play in Order";
+            notifyError("Encountered a problem while trying to shuffle your songs. Error: " + t.getClass().getSimpleName());
         }
 
         if (startingSongIndex != -1) {
-            int posInOrder = -1;
-            for (int i = 0; i < newOrder.size(); i++) {
-                if (newOrder.get(i) == startingSongIndex) {
-                    posInOrder = i;
-                    break;
-                }
-            }
-
-            if (posInOrder != -1) {
-                if (alg.equals("Default")) {
-                    orderIndex = startingSongIndex;
-                } else {
-                    orderIndex = posInOrder;
-                }
+            if (alg.equals("*Play in Order")) {
+                orderIndex = startingSongIndex;
+            } else {
+                // Shuffled algorithms now place the starting song at index 0
+                orderIndex = 0;
             }
         } else {
             orderIndex = -1;

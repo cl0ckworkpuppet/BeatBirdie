@@ -73,6 +73,11 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         runOnUiThread(this::updateNowPlayingBar);
     }
 
+    @Override
+    public void onError(String message) {
+        runOnUiThread(() -> Toast.makeText(this, message, Toast.LENGTH_LONG).show());
+    }
+
     /**
      * Checks for appropriate storage permissions based on Android version.
      * Android 13+ uses READ_MEDIA_AUDIO, while older versions use READ_EXTERNAL_STORAGE.

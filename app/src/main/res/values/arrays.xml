@@ -8,6 +8,10 @@
         <item>True Random, No Repeats</item>
         <item>Rarely Listened</item>
         <item>Your Top Hits</item>
+        <item>Sattolo</item>
+        <item>Casino</item>
+        <item>Prime-Step</item>
+        <item>Bit-Reversal</item>
     </string-array>
 
     <!-- the string values that will be passed into backend functions -->
@@ -17,6 +21,10 @@
         <item>random_norepeat</item>
         <item>least_played</item>
         <item>most_played</item>
+        <item>sattolo</item>
+        <item>casino</item>
+        <item>prime_step</item>
+        <item>bit_reversal</item>
     </string-array>
 
     <string-array name="theme_entries">

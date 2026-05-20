@@ -42,7 +42,7 @@
         android:summary="Automatically pause music when headphones are disconnected"
         android:defaultValue="true" />
 
-    <Preference
+    <com.example.it391_project_beatbirdie_for_android.LongClickPreference
         android:key="version_info"
         android:title="Version"
         android:summary="Unknown" />

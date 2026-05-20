@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.ListPreference;
@@ -73,7 +74,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
         }
 
-        Preference versionPref = findPreference("version_info");
+        LongClickPreference versionPref = findPreference("version_info");
         if (versionPref != null) {
             try {
                 PackageInfo pInfo = requireContext().getPackageManager().getPackageInfo(requireContext().getPackageName(), 0);
@@ -82,6 +83,17 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             } catch (PackageManager.NameNotFoundException e) {
                 versionPref.setSummary("Unknown");
             }
+
+            versionPref.setOnPreferenceLongClickListener(preference -> {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+                boolean currentlyEnabled = prefs.getBoolean("experimental_shuffle_enabled", false);
+                boolean newState = !currentlyEnabled;
+                prefs.edit().putBoolean("experimental_shuffle_enabled", newState).apply();
+
+                String msg = newState ? "Experimental shuffling algorithm has been added" : "Experimental shuffling algorithm has been removed";
+                Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+                return true;
+            });
         }
     }
 
