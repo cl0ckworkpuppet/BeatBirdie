@@ -29,6 +29,11 @@
         android:title="Manage Blacklist"
         android:summary="View and restore blacklisted songs"/>
 
+    <Preference
+        android:key="refresh_library"
+        android:title="Refresh Library"
+        android:summary="Scan for new or updated music files" />
+
     <!-- allow users to keep their screen on while the app is in use -->
     <SwitchPreferenceCompat
         android:key="lock_screen_on"

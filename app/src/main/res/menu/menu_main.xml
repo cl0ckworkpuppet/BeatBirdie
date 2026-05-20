@@ -3,21 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/action_refresh"
-        android:title="Refresh Library"
-        android:icon="@android:drawable/ic_menu_rotate"
+        android:id="@+id/action_playlists"
+        android:title="@string/playlists_title"
+        android:icon="@android:drawable/ic_menu_slideshow"
         app:showAsAction="ifRoom" />
-
-<!--    <item-->
-<!--        android:id="@+id/action_settings"-->
-<!--        android:title="Settings"-->
-<!--        android:icon="@android:drawable/ic_menu_preferences"-->
-<!--        app:showAsAction="ifRoom" />-->
 
     <item
         android:id="@+id/action_sort"
         android:title="Sort"
-        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:icon="@android:drawable/ic_menu_sort_alphabetically"
         app:showAsAction="ifRoom">
 
             <menu>

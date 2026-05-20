@@ -236,9 +236,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_refresh) {
-            loadSongs(); // Manually re-scan the library
-            Toast.makeText(this, "Library scanned.", Toast.LENGTH_SHORT).show();
+        if (id == R.id.action_playlists) {
+            startActivity(new Intent(this, PlaylistActivity.class));
             return true;
         }
         else if (id == R.id.action_sort_title) {
