@@ -5,13 +5,13 @@
     <item
         android:id="@+id/action_playlists"
         android:title="@string/playlists_title"
-        android:icon="@android:drawable/ic_menu_slideshow"
+        android:icon="@drawable/library_music_24px"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_sort"
         android:title="Sort"
-        android:icon="@android:drawable/ic_menu_sort_alphabetically"
+        android:icon="@drawable/sort_24px"
         app:showAsAction="ifRoom">
 
             <menu>
@@ -25,5 +25,12 @@
                     android:id="@+id/action_sort_album"
                     android:title="Sort by Album" />
             </menu>
-        </item>
+    </item>
+
+    <item
+        android:id="@+id/action_reverse_sort"
+        android:title="Reverse Sort"
+        android:icon="@drawable/mobiledata_arrows_24px"
+        app:showAsAction="ifRoom" />
+
 </menu>

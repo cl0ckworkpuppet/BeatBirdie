@@ -104,6 +104,16 @@ public class PlaylistActivity extends AppCompatActivity {
     private void loadPlaylists() {
         playlistList = db.playlistDao().getAllPlaylists();
         
+        // Pre-calculate thumbnail URIs to avoid DB/MediaStore lookups during scroll
+        for (Playlist p : playlistList) {
+            if (p.getCustomThumbnailPath() != null) {
+                p.setThumbnailUri(android.net.Uri.fromFile(new File(p.getCustomThumbnailPath())));
+            } else {
+                List<String> paths = db.playlistDao().getSongPathsForPlaylist(p.getId());
+                p.setThumbnailUri(Playlist.findEarliestSongWithCover(this, paths));
+            }
+        }
+        
         if (playlistList.isEmpty()) {
             tvNoPlaylists.setVisibility(View.VISIBLE);
             rvPlaylists.setVisibility(View.GONE);

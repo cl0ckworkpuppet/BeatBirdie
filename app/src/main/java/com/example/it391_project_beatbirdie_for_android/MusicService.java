@@ -58,7 +58,7 @@ public class MusicService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(songTitle)
                 .setContentText(artist)
-                .setSmallIcon(R.drawable.ic_launcher_foreground) // Ensure this exists or use another icon
+                .setSmallIcon(R.drawable.ic_music_note)
                 .setContentIntent(pendingIntent)
                 .setOngoing(true)
                 .build();

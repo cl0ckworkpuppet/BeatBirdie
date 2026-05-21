@@ -25,6 +25,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
         this.sortType = sortType;
     }
 
+    public String getSortType() {
+        return sortType;
+    }
+
     public interface OnSongClickListener {
         void onSongClick(int position);
     }
@@ -89,20 +93,25 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
     public void onBindViewHolder(ViewHolder holder, int position) {
         Song song = songs.get(position);
         holder.title.setText(song.getTitle());
-        String subtitle = song.getArtist() + " - " + song.getAlbum();
-        holder.artist.setText(subtitle);
+        holder.artist.setText(song.getSubtitle());
         
-        // Robust loading using custom AudioCoverModel.
-        // This prioritizes embedded art via MediaMetadataRetriever (cached by Glide).
-        // If embedded art fails, it falls back to the MediaStore album art URI.
+        // Clear the ImageView immediately to prevent "ghost" images from recycled views
+        holder.albumCover.setImageResource(R.drawable.ic_music_note);
+
+        // PERFORMANCE: Use nested fallbacks with placeholders at every level to prevent "empty space"
+        // We use .dontAnimate() to prevent the "disappearing" effect during transitions.
         Glide.with(holder.itemView.getContext())
-            .load(new AudioCoverModel(song.getUri()))
-            .override(160, 160)
+            .load(song.getCoverModel())
             .placeholder(R.drawable.ic_music_note)
             .error(Glide.with(holder.itemView.getContext())
                 .load(song.getAlbumArtUri())
-                .override(160, 160)
-                .error(R.drawable.ic_music_note))
+                .placeholder(R.drawable.ic_music_note)
+                .error(R.drawable.ic_music_note)
+                .fallback(R.drawable.ic_music_note)
+                .dontAnimate()
+                .diskCacheStrategy(DiskCacheStrategy.ALL))
+            .fallback(R.drawable.ic_music_note)
+            .dontAnimate()
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(holder.albumCover);
     }
@@ -110,27 +119,26 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> im
     @NonNull
     @Override
     public String getPopupText(View view, int position) {
+        if (position < 0 || position >= songs.size()) return "";
+        
+        Song song = songs.get(position);
         String textToCompare;
         if ("artist".equalsIgnoreCase(sortType)) {
-            textToCompare = songs.get(position).getArtist();
+            textToCompare = song.getArtist();
         } else if ("album".equalsIgnoreCase(sortType)) {
-            textToCompare = songs.get(position).getAlbum();
+            textToCompare = song.getAlbum();
         } else {
-            textToCompare = songs.get(position).getTitle();
+            textToCompare = song.getTitle();
         }
 
-        if (textToCompare == null || textToCompare.trim().isEmpty()) {
-            return "&";
+        if (textToCompare == null || textToCompare.isEmpty()) {
+            return "?";
         }
         
-        char c = textToCompare.trim().charAt(0);
-        if (Character.isLetter(c)) {
-            return String.valueOf(Character.toUpperCase(c));
-        } else if (Character.isDigit(c)) {
-            return "#";
-        } else {
-            return "&";
-        }
+        // Simplified character extraction to keep UI thread responsive during fast scroll
+        char c = textToCompare.charAt(0);
+        if (Character.isDigit(c)) return "#";
+        return String.valueOf(Character.toUpperCase(c));
     }
 
     public List<Song> getSongs() {

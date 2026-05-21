@@ -1,14 +1,12 @@
 package com.example.it391_project_beatbirdie_for_android;
 
-import android.content.ContentUris;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.view.View;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -69,15 +67,15 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             Glide.with(this).load(playlist.getCustomThumbnailPath()).into(ivHeaderThumb);
         } else {
             List<String> paths = db.playlistDao().getSongPathsForPlaylist(playlistId);
-            Uri coverUri = findEarliestSongWithCover(paths);
-            if (coverUri != null) {
+            Object coverObj = Playlist.findEarliestSongWithCover(this, paths);
+            if (coverObj != null) {
                 Glide.with(this)
-                    .load(new AudioCoverModel(coverUri))
-                    .placeholder(R.drawable.ic_music_note)
-                    .error(R.drawable.ic_music_note)
+                    .load(coverObj)
+                    .placeholder(R.drawable.queue_music_24px)
+                    .error(R.drawable.queue_music_24px)
                     .into(ivHeaderThumb);
             } else {
-                ivHeaderThumb.setImageResource(R.drawable.ic_music_note);
+                ivHeaderThumb.setImageResource(R.drawable.queue_music_24px);
             }
         }
 
@@ -99,52 +97,20 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
 
         rvSongs = findViewById(R.id.rvPlaylistSongs);
         rvSongs.setLayoutManager(new LinearLayoutManager(this));
+        rvSongs.setHasFixedSize(true);
+        rvSongs.setItemViewCacheSize(20);
+        
+        // Boost the recycled view pool to prevent inflation hangs during fast scroll
+        rvSongs.getRecycledViewPool().setMaxRecycledViews(0, 50);
 
         loadPlaylistSongs();
-    }
-
-    private Uri findEarliestSongWithCover(List<String> paths) {
-        if (paths == null || paths.isEmpty()) return null;
-
-        android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever();
-        try {
-            for (String path : paths) {
-                try {
-                    retriever.setDataSource(path);
-                    byte[] art = retriever.getEmbeddedPicture();
-                    if (art != null) {
-                        return getSongUriByPath(path);
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        } finally {
-            try {
-                retriever.release();
-            } catch (Exception ignored) {}
-        }
-        return null;
-    }
-
-    private Uri getSongUriByPath(String path) {
-        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        String[] projection = {MediaStore.Audio.Media._ID};
-        String selection = MediaStore.Audio.Media.DATA + "=?";
-        String[] selectionArgs = {path};
-        try (Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, cursor.getLong(0));
-            }
-        }
-        return null;
     }
 
     private void loadPlaylistSongs() {
         List<String> paths = db.playlistDao().getSongPathsForPlaylist(playlistId);
         playlistSongs.clear();
-        
         for (String path : paths) {
-            Song song = getSongByPath(path);
+            Song song = Song.getByPath(this, path);
             if (song != null) {
                 playlistSongs.add(song);
             }
@@ -165,10 +131,14 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
             nowPlayingBar.setVisibility(View.VISIBLE);
             nowPlayingTitle.setText(currentSong.getTitle());
             nowPlayingArtist.setText(currentSong.getArtist());
+            
             Glide.with(this)
-                .load(new AudioCoverModel(currentSong.getUri()))
+                .load(currentSong.getCoverModel())
                 .placeholder(R.drawable.ic_music_note)
-                .error(Glide.with(this).load(currentSong.getAlbumArtUri()).error(R.drawable.ic_music_note))
+                .error(Glide.with(this)
+                    .load(currentSong.getAlbumArtUri())
+                    .error(R.drawable.ic_music_note))
+                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
                 .into(nowPlayingCover);
             
             if (PlaybackHandler.isPlaying()) {
@@ -200,36 +170,6 @@ public class PlaylistDetailActivity extends AppCompatActivity implements Playbac
     public void onQueueModified() { }
     @Override
     public void onError(String message) { }
-
-    private Song getSongByPath(String path) {
-        if (path != null && (path.toLowerCase().endsWith(".mp2") || path.toLowerCase().endsWith(".wma"))) return null;
-
-        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        String[] projection = {
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.TITLE,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.ALBUM,
-                MediaStore.Audio.Media.ALBUM_ID,
-                MediaStore.Audio.Media.DURATION
-        };
-        String selection = MediaStore.Audio.Media.DATA + "=?";
-        String[] selectionArgs = {path};
-
-        try (Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                long id = cursor.getLong(0);
-                String title = cursor.getString(1);
-                String artist = cursor.getString(2);
-                String album = cursor.getString(3);
-                long albumId = cursor.getLong(4);
-                int duration = cursor.getInt(5);
-                Uri contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-                return new Song(title, artist, album, contentUri, path, albumId, duration);
-            }
-        }
-        return null;
-    }
 
     private void showRemoveOption(Song song) {
         new androidx.appcompat.app.AlertDialog.Builder(this)

@@ -1,51 +1,46 @@
-<!--
-the graphical setup for how each song shows up on the main screen.
-basically just creates a little box with song details.
-TODO: make these boxes clickable
--->
-
-<LinearLayout
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="80dp"
-    android:orientation="horizontal"
     android:padding="8dp">
 
-    <!-- album cover -->
+    <!-- Fixed size ImageView for better performance -->
     <ImageView
         android:id="@+id/albumCover"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:src="@drawable/ic_launcher_foreground" />
+        android:layout_centerVertical="true"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_music_note" />
 
+    <!-- Container for text - avoiding weights for single-pass measurement -->
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/albumCover"
+        android:layout_centerVertical="true"
         android:paddingStart="12dp"
-        android:gravity="center_vertical">
+        android:orientation="vertical">
 
-        <!-- song title -->
         <TextView
             android:id="@+id/songTitle"
-            android:text="Song Title"
-            android:textSize="16sp"
-            android:textStyle="bold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
             android:ellipsize="end"
             android:singleLine="true"/>
 
-        <!-- song artist and album (the ID name is a little misleading sorry) -->
         <TextView
             android:id="@+id/songArtist"
-            android:text="Artist Name - Album"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorSecondary"
             android:ellipsize="end"
             android:singleLine="true"/>
 
     </LinearLayout>
 
-</LinearLayout>
+</RelativeLayout>

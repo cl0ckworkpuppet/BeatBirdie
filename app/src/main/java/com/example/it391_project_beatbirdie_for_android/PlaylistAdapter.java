@@ -41,25 +41,15 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
         String sizeText = holder.itemView.getContext().getString(R.string.playlist_size_format, playlist.getSongCount());
         holder.tvSize.setText(sizeText);
 
-        if (playlist.getCustomThumbnailPath() != null) {
-            Glide.with(holder.itemView.getContext())
-                    .load(playlist.getCustomThumbnailPath())
-                    .placeholder(R.drawable.ic_music_note)
-                    .into(holder.ivThumbnail);
-        } else {
-            List<String> paths = AppDatabase.getInstance(holder.itemView.getContext()).playlistDao().getSongPathsForPlaylist(playlist.getId());
-            Uri coverUri = findEarliestSongWithCover(holder.itemView.getContext(), paths);
-            
-            if (coverUri != null) {
-                Glide.with(holder.itemView.getContext())
-                        .load(new AudioCoverModel(coverUri))
-                        .placeholder(R.drawable.ic_music_note)
-                        .error(R.drawable.ic_music_note)
-                        .into(holder.ivThumbnail);
-            } else {
-                holder.ivThumbnail.setImageResource(R.drawable.ic_music_note);
-            }
-        }
+        // Robust loading using pre-calculated thumbnailUri to prevent UI lag.
+        // Nested loading handled in PlaylistActivity ensures we have a Uri ready to go.
+        Glide.with(holder.itemView.getContext())
+                .load(playlist.getThumbnailUri())
+                .placeholder(R.drawable.queue_music_24px)
+                .error(R.drawable.queue_music_24px)
+                .fallback(R.drawable.queue_music_24px)
+                .dontAnimate()
+                .into(holder.ivThumbnail);
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
@@ -74,44 +64,6 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.Playli
             }
             return false;
         });
-    }
-
-    private Uri findEarliestSongWithCover(android.content.Context context, List<String> paths) {
-        if (paths == null || paths.isEmpty()) return null;
-        
-        android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever();
-        try {
-            for (String path : paths) {
-                try {
-                    retriever.setDataSource(path);
-                    byte[] art = retriever.getEmbeddedPicture();
-                    if (art != null) {
-                        return getSongUriByPath(context, path);
-                    }
-                } catch (Exception ignored) {
-                    // Skip songs that fail to load or have no art
-                }
-            }
-        } finally {
-            try {
-                retriever.release();
-            } catch (Exception ignored) {}
-        }
-        return null;
-    }
-
-    private Uri getSongUriByPath(android.content.Context context, String path) {
-        android.net.Uri uri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        String[] projection = {android.provider.MediaStore.Audio.Media._ID};
-        String selection = android.provider.MediaStore.Audio.Media.DATA + "=?";
-        String[] selectionArgs = {path};
-        try (android.database.Cursor cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                long id = cursor.getLong(0);
-                return android.content.ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-            }
-        }
-        return null;
     }
 
     @Override

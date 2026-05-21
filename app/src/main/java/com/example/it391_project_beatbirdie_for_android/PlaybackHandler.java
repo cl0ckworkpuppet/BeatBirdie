@@ -95,23 +95,9 @@ public class PlaybackHandler {
 
         playingPlaylistId = playlistId;
         currentPlaylist = new ArrayList<>(playlist);
-        // Instead of just generating order and playing, we ensure the selected song is at the front
-        // of a NEW shuffle if shuffle is enabled, or just at its position in Default mode.
         generatePlaybackOrder(index);
         
-        if (!alg.equals("*Play in Order")) {
-            // Move the selected song to the front of the playback order
-            moveOrderIndexToFront(orderIndex);
-        }
-        
         playCurrent(context);
-    }
-
-    private static void moveOrderIndexToFront(int indexInOrder) {
-        if (playbackOrder == null || indexInOrder < 0 || indexInOrder >= playbackOrder.size()) return;
-        Integer val = playbackOrder.remove(indexInOrder);
-        playbackOrder.add(0, val);
-        orderIndex = 0;
     }
 
     /**

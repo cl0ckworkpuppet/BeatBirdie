@@ -62,6 +62,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
     private final List<Song> songList = new ArrayList<>();
     private SongAdapter adapter;
     private androidx.appcompat.widget.SearchView searchView;
+    private boolean isAscending = true;
+    private String currentSortType = "title";
 
     @Override
     public void onSongChanged() {
@@ -254,70 +256,69 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             return true;
         }
         else if (id == R.id.action_sort_title) {
-            songList.sort((s1, s2) -> {
-                String t1 = s1.getTitle();
-                String t2 = s2.getTitle();
-                if (t1 == null) t1 = "";
-                if (t2 == null) t2 = "";
-                int g1 = getGroup(t1);
-                int g2 = getGroup(t2);
-                if (g1 != g2) return Integer.compare(g1, g2);
-                return t1.compareToIgnoreCase(t2);
-            });
-            PlaybackHandler.updatePlaylist(songList, -1);
-            if (adapter != null) {
-                adapter.setSortType("title");
-                adapter.updateList(songList);
-                if (searchView != null && !searchView.getQuery().toString().isEmpty()) {
-                    adapter.filter(searchView.getQuery().toString());
-                }
-            }
+            sortSongs("title");
             return true;
         }
         else if (id == R.id.action_sort_artist) {
-            songList.sort((s1, s2) -> {
-                String a1 = s1.getArtist();
-                String a2 = s2.getArtist();
-                if (a1 == null) a1 = "";
-                if (a2 == null) a2 = "";
-                int g1 = getGroup(a1);
-                int g2 = getGroup(a2);
-                if (g1 != g2) return Integer.compare(g1, g2);
-                return a1.compareToIgnoreCase(a2);
-            });
-            PlaybackHandler.updatePlaylist(songList, -1);
-            if (adapter != null) {
-                adapter.setSortType("artist");
-                adapter.updateList(songList);
-                if (searchView != null && !searchView.getQuery().toString().isEmpty()) {
-                    adapter.filter(searchView.getQuery().toString());
-                }
-            }
+            sortSongs("artist");
             return true;
         }
         else if (id == R.id.action_sort_album) {
-            songList.sort((s1, s2) -> {
-                String al1 = s1.getAlbum();
-                String al2 = s2.getAlbum();
-                if (al1 == null) al1 = "";
-                if (al2 == null) al2 = "";
-                int g1 = getGroup(al1);
-                int g2 = getGroup(al2);
-                if (g1 != g2) return Integer.compare(g1, g2);
-                return al1.compareToIgnoreCase(al2);
-            });
-            PlaybackHandler.updatePlaylist(songList, -1);
-            if (adapter != null) {
-                adapter.setSortType("album");
-                adapter.updateList(songList);
-                if (searchView != null && !searchView.getQuery().toString().isEmpty()) {
-                    adapter.filter(searchView.getQuery().toString());
-                }
-            }
+            sortSongs("album");
+            return true;
+        }
+        else if (id == R.id.action_reverse_sort) {
+            isAscending = !isAscending;
+            sortSongs(currentSortType);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
+
+    private void sortSongs(String type) {
+        this.currentSortType = type;
+        songList.sort((s1, s2) -> {
+            String val1, val2;
+            switch (type) {
+                case "artist":
+                    val1 = s1.getArtist();
+                    val2 = s2.getArtist();
+                    break;
+                case "album":
+                    val1 = s1.getAlbum();
+                    val2 = s2.getAlbum();
+                    break;
+                case "title":
+                default:
+                    val1 = s1.getTitle();
+                    val2 = s2.getTitle();
+                    break;
+            }
+            if (val1 == null) val1 = "";
+            if (val2 == null) val2 = "";
+            
+            int g1 = getGroup(val1);
+            int g2 = getGroup(val2);
+            
+            int res;
+            if (g1 != g2) {
+                res = Integer.compare(g1, g2);
+            } else {
+                res = val1.compareToIgnoreCase(val2);
+            }
+            return isAscending ? res : -res;
+        });
+        
+        PlaybackHandler.updatePlaylist(songList, -1);
+        if (adapter != null) {
+            adapter.setSortType(type);
+            adapter.updateList(songList);
+            if (searchView != null && !searchView.getQuery().toString().isEmpty()) {
+                adapter.filter(searchView.getQuery().toString());
+            }
+        }
+    }
+
 
     /**
      * Syncs the bottom play bar UI with the current state of PlaybackHandler.
@@ -333,7 +334,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
             // This prioritizes embedded art via MediaMetadataRetriever (cached by Glide).
             // If embedded art fails, it falls back to the MediaStore album art URI.
             Glide.with(this)
-                .load(new AudioCoverModel(currentSong.getUri()))
+                .load(currentSong.getCoverModel())
                 .placeholder(R.drawable.ic_music_note)
                 .error(Glide.with(this)
                     .load(currentSong.getAlbumArtUri())
@@ -411,7 +412,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                         List<String> paths = db.playlistDao().getSongPathsForPlaylist(selected.getId());
                         List<Song> updatedSongs = new ArrayList<>();
                         for (String path : paths) {
-                            Song s = getSongByPath(path);
+                            Song s = Song.getByPath(this, path);
                             if (s != null) updatedSongs.add(s);
                         }
                         PlaybackHandler.updatePlaylist(updatedSongs, selected.getId());
@@ -433,57 +434,6 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
-    }
-
-    private Song getSongByPath(String path) {
-        if (BlacklistManager.isBlacklisted(this, path) || (path != null && (path.toLowerCase().endsWith(".mp2") || path.toLowerCase().endsWith(".wma")))) return null;
-
-        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        String[] projection = {
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.TITLE,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.ALBUM,
-                MediaStore.Audio.Media.ALBUM_ID,
-                MediaStore.Audio.Media.DURATION,
-                MediaStore.Audio.Media.DISPLAY_NAME
-        };
-        String selection = MediaStore.Audio.Media.DATA + "=?";
-        String[] selectionArgs = {path};
-
-        try (Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                long id = cursor.getLong(0);
-                String title = cursor.getString(1);
-                String artist = cursor.getString(2);
-                String album = cursor.getString(3);
-                long albumId = cursor.getLong(4);
-                int duration = cursor.getInt(5);
-                String fileName = cursor.getString(6);
-
-                if (duration <= 0) {
-                    try (android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever()) {
-                        retriever.setDataSource(path);
-                        String durStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
-                        if (durStr != null) {
-                            duration = Integer.parseInt(durStr);
-                        }
-                    } catch (Exception ignored) {}
-                }
-
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                int minDuration = Integer.parseInt(prefs.getString("filter_duration", "0"));
-                if (duration < minDuration) return null;
-
-                if (title == null || title.isEmpty()) title = fileName;
-                if (artist == null || artist.isEmpty() || artist.equals("<unknown>")) artist = "Unknown Artist";
-                if (album == null || album.isEmpty() || album.equals("<unknown>")) album = "Unknown Album";
-
-                Uri contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-                return new Song(title, artist, album, contentUri, path, albumId, duration);
-            }
-        }
-        return null;
     }
 
     private void applyKeepScreenOn() {
@@ -576,6 +526,11 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         // Set up the list display
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setItemViewCacheSize(20);
+        
+        // Boost the recycled view pool to prevent inflation hangs during fast scroll
+        recyclerView.getRecycledViewPool().setMaxRecycledViews(0, 50);
 
         adapter = new SongAdapter(songList, position -> {
             // Use the adapter's current list (which might be filtered)
@@ -601,7 +556,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
-        toolbar.setNavigationIcon(android.R.drawable.ic_menu_preferences);
+        toolbar.setNavigationIcon(R.drawable.settings_24px);
 
         toolbar.setNavigationOnClickListener(v -> {
             startActivity(new Intent(this, SettingsActivity.class));

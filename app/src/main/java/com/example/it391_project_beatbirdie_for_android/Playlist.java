@@ -16,10 +16,20 @@ public class Playlist {
 
     @Ignore
     private List<Song> songs;
+    @Ignore
+    private Object thumbnailUri;
 
     public Playlist(String name) {
         this.name = name;
         this.songs = new ArrayList<>();
+    }
+
+    public Object getThumbnailUri() {
+        return thumbnailUri;
+    }
+
+    public void setThumbnailUri(Object thumbnailUri) {
+        this.thumbnailUri = thumbnailUri;
     }
 
     @Ignore
@@ -70,7 +80,79 @@ public class Playlist {
         this.songs = songs;
     }
 
-    public int getSize() {
-        return songs != null ? songs.size() : 0;
+    /**
+     * Finds the first song in the list of paths that has a valid album art.
+     * Returns either an AudioCoverModel (for embedded art) or a Uri (for MediaStore art).
+     */
+    public static Object findEarliestSongWithCover(android.content.Context context, List<String> paths) {
+        if (paths == null) return null;
+        for (String path : paths) {
+            android.net.Uri songUri = getSongUriByPath(context, path);
+            if (songUri != null) {
+                // Priority 1: Embedded Art (via AudioCoverModel)
+                if (hasEmbeddedArt(context, songUri)) {
+                    return new AudioCoverModel(songUri);
+                }
+                
+                // Priority 2: MediaStore Album Art
+                android.net.Uri albumArtUri = getAlbumArtUri(context, path);
+                if (albumArtUri != null) {
+                    return albumArtUri;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasEmbeddedArt(android.content.Context context, android.net.Uri songUri) {
+        try (android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever()) {
+            retriever.setDataSource(context, songUri);
+            byte[] art = retriever.getEmbeddedPicture();
+            return art != null;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private static android.net.Uri getSongUriByPath(android.content.Context context, String path) {
+        String[] projection = {android.provider.MediaStore.Audio.Media._ID};
+        String selection = android.provider.MediaStore.Audio.Media.DATA + "=?";
+        String[] selectionArgs = {path};
+
+        try (android.database.Cursor cursor = context.getContentResolver().query(
+                android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection, selection, selectionArgs, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                long id = cursor.getLong(0);
+                return android.content.ContentUris.withAppendedId(
+                        android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+            }
+        }
+        return null;
+    }
+
+    private static android.net.Uri getAlbumArtUri(android.content.Context context, String path) {
+        String[] projection = {android.provider.MediaStore.Audio.Media.ALBUM_ID};
+        String selection = android.provider.MediaStore.Audio.Media.DATA + "=?";
+        String[] selectionArgs = {path};
+
+        try (android.database.Cursor cursor = context.getContentResolver().query(
+                android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection, selection, selectionArgs, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                long albumId = cursor.getLong(0);
+                if (albumId > 0) {
+                    android.net.Uri uri = android.content.ContentUris.withAppendedId(
+                            android.net.Uri.parse("content://media/external/audio/albumart"),
+                            albumId
+                    );
+                    // Verify if art actually exists for this albumId
+                    try (java.io.InputStream is = context.getContentResolver().openInputStream(uri)) {
+                        if (is != null) return uri;
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+        return null;
     }
 }

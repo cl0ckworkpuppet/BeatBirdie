@@ -12,7 +12,7 @@
             android:entries="@array/theme_entries"
             android:entryValues="@array/theme_values"
             android:defaultValue="default"
-            android:icon="@android:drawable/ic_menu_gallery" />
+            android:icon="@drawable/brightness_4_24px" />
     </androidx.preference.PreferenceCategory>
 
     <androidx.preference.PreferenceCategory
@@ -61,7 +61,7 @@
             android:title="Pause on Disconnect"
             android:summary="Automatically pause music when headphones are disconnected"
             android:defaultValue="true"
-            android:icon="@android:drawable/ic_lock_silent_mode" />
+            android:icon="@drawable/no_sound_24px" />
     </androidx.preference.PreferenceCategory>
 
     <androidx.preference.PreferenceCategory

@@ -143,7 +143,7 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
                         List<String> paths = db.playlistDao().getSongPathsForPlaylist(selected.getId());
                         List<Song> updatedSongs = new ArrayList<>();
                         for (String path : paths) {
-                            Song s = getSongByPath(path);
+                            Song s = Song.getByPath(this, path);
                             if (s != null) updatedSongs.add(s);
                         }
                         PlaybackHandler.updatePlaylist(updatedSongs, selected.getId());
@@ -576,34 +576,6 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
                 .error(R.drawable.ic_music_note))
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(cover);
-    }
-
-    private Song getSongByPath(String path) {
-        android.net.Uri uri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        String[] projection = {
-                android.provider.MediaStore.Audio.Media._ID,
-                android.provider.MediaStore.Audio.Media.TITLE,
-                android.provider.MediaStore.Audio.Media.ARTIST,
-                android.provider.MediaStore.Audio.Media.ALBUM,
-                android.provider.MediaStore.Audio.Media.ALBUM_ID,
-                android.provider.MediaStore.Audio.Media.DURATION
-        };
-        String selection = android.provider.MediaStore.Audio.Media.DATA + "=?";
-        String[] selectionArgs = {path};
-
-        try (android.database.Cursor cursor = getContentResolver().query(uri, projection, selection, selectionArgs, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                long id = cursor.getLong(0);
-                String title = cursor.getString(1);
-                String artist = cursor.getString(2);
-                String album = cursor.getString(3);
-                long albumId = cursor.getLong(4);
-                int duration = cursor.getInt(5);
-                android.net.Uri contentUri = android.content.ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-                return new Song(title, artist, album, contentUri, path, albumId, duration);
-            }
-        }
-        return null;
     }
 
     private  String formatTime (int ms) {

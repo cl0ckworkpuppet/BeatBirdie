@@ -4,4 +4,5 @@
     <string name="playlists_title">Playlists</string>
     <string name="add_playlist">Add Playlist</string>
     <string name="no_playlists_message">No playlists yet. Press the + button to create one!</string>
+    <string name="reverse_sort">Reverse Sort</string>
 </resources>
