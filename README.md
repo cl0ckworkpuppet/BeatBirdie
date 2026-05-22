@@ -1,3 +1,5 @@
+*This documentation is currently out of date. Please see our [Releases](https://github.com/cl0ckworkpuppet/IT_391_Project/releases) page for information on the new updates 1.1 and 1.2 while we rewrite and refine our README. Thanks!*
+
 # BeatBirdie: Offline Music Shuffler for Android
 
 BeatBirdie is a high-performance local music player for Android that bridges the gap between simplicity and advanced playback logic. Built for anyone who values having personal control over their music library, BeatBirdie puts the user experience above everything else.
