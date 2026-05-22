@@ -14,6 +14,18 @@
         <item>Bit-Reversal</item>
     </string-array>
 
+    <string-array name="shuffle_algorithm_names">
+        <item>*Play in Order</item>
+        <item>Fisher-Yates</item>
+        <item>True Random, No Repeats</item>
+        <item>Fair Play</item>
+        <item>Sattolo\'s Algorithm</item>
+        <item>Casino Shuffle</item>
+        <item>Prime-Step</item>
+        <item>*Bit-Reversal</item>
+        <item>EXPERIMENTAL SHUFFLE</item>
+    </string-array>
+
     <!-- the string values that will be passed into backend functions -->
     <string-array name="shuffle_algs">
         <item>fisher_yates</item>

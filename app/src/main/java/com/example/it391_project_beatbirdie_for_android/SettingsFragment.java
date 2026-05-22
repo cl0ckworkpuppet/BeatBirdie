@@ -95,6 +95,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             });
         }
 
+        SwitchPreferenceCompat quickDropdownPref = findPreference("shuffle_quick_dropdown");
+        androidx.preference.MultiSelectListPreference favouritesPref = findPreference("favourite_shuffle_algorithms");
+
+        updateFavouriteAlgorithmsList(favouritesPref, quickDropdownPref);
+
         LongClickPreference versionPref = findPreference("version_info");
         if (versionPref != null) {
             try {
@@ -113,8 +118,62 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
                 String msg = newState ? "Experimental shuffling algorithm has been added" : "Experimental shuffling algorithm has been removed";
                 Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+
+                updateFavouriteAlgorithmsList(favouritesPref, quickDropdownPref);
                 return true;
             });
+        }
+    }
+
+    private void updateFavouriteAlgorithmsList(androidx.preference.MultiSelectListPreference favouritesPref, SwitchPreferenceCompat quickDropdownPref) {
+        if (favouritesPref == null) return;
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        boolean experimentalEnabled = prefs.getBoolean("experimental_shuffle_enabled", false);
+
+        String[] allAlgs = getResources().getStringArray(R.array.shuffle_algorithm_names);
+        java.util.List<String> filteredAlgs = new java.util.ArrayList<>();
+
+        for (String alg : allAlgs) {
+            if (alg.equals("EXPERIMENTAL SHUFFLE") && !experimentalEnabled) {
+                continue;
+            }
+            filteredAlgs.add(alg);
+        }
+
+        CharSequence[] entries = filteredAlgs.toArray(new CharSequence[0]);
+        favouritesPref.setEntries(entries);
+        favouritesPref.setEntryValues(entries);
+
+        // Remove EXPERIMENTAL SHUFFLE from selected values if it's now disabled
+        if (!experimentalEnabled) {
+            java.util.Set<String> currentValues = favouritesPref.getValues();
+            if (currentValues != null && currentValues.contains("EXPERIMENTAL SHUFFLE")) {
+                java.util.Set<String> newValues = new java.util.HashSet<>(currentValues);
+                newValues.remove("EXPERIMENTAL SHUFFLE");
+                favouritesPref.setValues(newValues);
+            }
+        }
+
+        if (quickDropdownPref != null) {
+            favouritesPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                java.util.Set<String> favourites = (java.util.Set<String>) newValue;
+                if (favourites == null || favourites.isEmpty()) {
+                    quickDropdownPref.setChecked(false);
+                    quickDropdownPref.setEnabled(false);
+                } else {
+                    quickDropdownPref.setEnabled(true);
+                }
+                return true;
+            });
+
+            java.util.Set<String> currentFavourites = favouritesPref.getValues();
+            if (currentFavourites == null || currentFavourites.isEmpty()) {
+                quickDropdownPref.setChecked(false);
+                quickDropdownPref.setEnabled(false);
+            } else {
+                quickDropdownPref.setEnabled(true);
+            }
         }
     }
 

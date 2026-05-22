@@ -162,7 +162,8 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 MediaStore.Audio.Media.DISPLAY_NAME,
                 MediaStore.Audio.Media.ALBUM_ID,
                 MediaStore.Audio.Media.DURATION,
-                MediaStore.Audio.Media.DATA
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.TRACK
         };
 
         // mediastore sorting is case sensitive. removed params and replaced with null when appropriate
@@ -179,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 long albumId = cursor.getLong(5);
                 int duration = cursor.getInt(6);
                 String path = cursor.getString(7);
+                int trackNumber = cursor.getInt(8);
 
                 // If duration is 0, try to retrieve it manually (common for some formats like MP2/WMA)
                 if (duration <= 0 && path != null) {
@@ -212,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements PlaybackHandler.P
                 Uri contentUri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
                 );
-                songList.add(new Song(title, artist, album, contentUri, path, albumId, duration));
+                songList.add(new Song(title, artist, album, contentUri, path, albumId, duration, trackNumber));
             }
             cursor.close();
         }

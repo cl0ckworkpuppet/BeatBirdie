@@ -449,11 +449,53 @@ public class NowPlayingActivity extends AppCompatActivity implements PlaybackHan
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean experimentalEnabled = prefs.getBoolean("experimental_shuffle_enabled", false);
+        boolean quickDropdownEnabled = prefs.getBoolean("shuffle_quick_dropdown", false);
+        java.util.Set<String> favorites = prefs.getStringSet("favourite_shuffle_algorithms", null);
 
-        List<String> algorithmList = new ArrayList<>(Arrays.asList("*Play in Order", "Fisher-Yates", "True Random, No Repeats", "Fair Play", "Sattolo's Algorithm", "Casino Shuffle", "Prime-Step", "*Bit-Reversal"));
-        if (experimentalEnabled) {
-            algorithmList.add("EXPERIMENTAL SHUFFLE");
+        List<String> algorithmList = new ArrayList<>();
+
+        if (quickDropdownEnabled && favorites != null && !favorites.isEmpty()) {
+            // Filter to ONLY favorites
+            List<String> allAvailable = new ArrayList<>(Arrays.asList("*Play in Order", "Fisher-Yates", "True Random, No Repeats", "Fair Play", "Sattolo's Algorithm", "Casino Shuffle", "Prime-Step", "*Bit-Reversal"));
+            if (experimentalEnabled) {
+                allAvailable.add("EXPERIMENTAL SHUFFLE");
+            }
+
+            for (String alg : allAvailable) {
+                if (favorites.contains(alg)) {
+                    algorithmList.add(alg);
+                }
+            }
+
+            // Ensure current algorithm is visible even if not a favorite
+            String current = PlaybackHandler.currentAlg();
+            if (!algorithmList.contains(current)) {
+                algorithmList.add(0, current);
+            }
+        } else {
+            // Quick Dropdown is OFF. 
+            // All algorithms should be present, with favorites at the bottom (closest to the spinner button)
+            List<String> allAvailable = new ArrayList<>(Arrays.asList("*Play in Order", "Fisher-Yates", "True Random, No Repeats", "Fair Play", "Sattolo's Algorithm", "Casino Shuffle", "Prime-Step", "*Bit-Reversal"));
+            if (experimentalEnabled) {
+                allAvailable.add("EXPERIMENTAL SHUFFLE");
+            }
+
+            List<String> favoriteList = new ArrayList<>();
+            List<String> nonFavoriteList = new ArrayList<>();
+
+            for (String alg : allAvailable) {
+                if (favorites != null && favorites.contains(alg)) {
+                    favoriteList.add(alg);
+                } else {
+                    nonFavoriteList.add(alg);
+                }
+            }
+
+            // To have favorites at the bottom, we add non-favorites first, then favorites.
+            algorithmList.addAll(nonFavoriteList);
+            algorithmList.addAll(favoriteList);
         }
+
         currentAlgorithms = algorithmList.toArray(new String[0]);
 
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,

@@ -20,13 +20,14 @@ public class Song {
     private final String path;
     private final long albumId;
     private final int duration;
+    private final int trackNumber;
     
     // Pre-calculated fields to ensure zero-logic binding in adapters
     private final String subtitle;
     private final Uri albumArtUri;
     private final AudioCoverModel coverModel;
 
-    public Song(String title, String artist, String album, Uri uri, String path, long albumId, int duration) {
+    public Song(String title, String artist, String album, Uri uri, String path, long albumId, int duration, int trackNumber) {
         this.title = title != null ? title : "Unknown Title";
         this.artist = artist != null ? artist : "Unknown Artist";
         this.album = album != null ? album : "Unknown Album";
@@ -34,6 +35,7 @@ public class Song {
         this.path = path;
         this.albumId = albumId;
         this.duration = duration;
+        this.trackNumber = trackNumber;
         
         // Pre-calculate to avoid string concatenation and object creation during scroll
         this.subtitle = this.artist + " - " + this.album;
@@ -48,6 +50,7 @@ public class Song {
     public String getPath() { return path; }
     public long getAlbumId() { return albumId; }
     public int getDuration() { return duration; }
+    public int getTrackNumber() { return trackNumber; }
     public String getSubtitle() { return subtitle; }
     public Uri getAlbumArtUri() { return albumArtUri; }
     public AudioCoverModel getCoverModel() { return coverModel; }
@@ -66,7 +69,8 @@ public class Song {
                 MediaStore.Audio.Media.ALBUM,
                 MediaStore.Audio.Media.ALBUM_ID,
                 MediaStore.Audio.Media.DURATION,
-                MediaStore.Audio.Media.DISPLAY_NAME
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.TRACK
         };
         String selection = MediaStore.Audio.Media.DATA + "=?";
         String[] selectionArgs = {path};
@@ -80,6 +84,7 @@ public class Song {
                 long albumId = cursor.getLong(4);
                 int duration = cursor.getInt(5);
                 String fileName = cursor.getString(6);
+                int trackNumber = cursor.getInt(7);
 
                 if (duration <= 0) {
                     try (android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever()) {
@@ -98,7 +103,7 @@ public class Song {
                 if (album == null || album.isEmpty() || album.equals("<unknown>")) album = "Unknown Album";
 
                 Uri contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-                return new Song(title, artist, album, contentUri, path, albumId, duration);
+                return new Song(title, artist, album, contentUri, path, albumId, duration, trackNumber);
             }
         }
         return null;

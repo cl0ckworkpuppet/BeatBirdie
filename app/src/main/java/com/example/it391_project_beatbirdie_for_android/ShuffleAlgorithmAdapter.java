@@ -45,11 +45,11 @@ public class ShuffleAlgorithmAdapter extends RecyclerView.Adapter<ShuffleAlgorit
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ShuffleAlgorithm algorithm = algs.get(position);
 
-        holder.name.setText(algorithm.name);
-        holder.description.setText(algorithm.description);
+        holder.name.setText(algorithm.getName());
+        holder.description.setText(algorithm.getDescription());
 
         holder.itemView.setOnClickListener(v -> {
-            PlaybackHandler.setAlg(algorithm.name);
+            PlaybackHandler.setAlg(algorithm.getName());
             notifyDataSetChanged();
             activity.finish();
         });

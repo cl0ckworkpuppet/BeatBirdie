@@ -32,6 +32,9 @@
             android:name=".PlaylistDetailActivity"
             android:exported="false" />
         <activity
+            android:name=".CategoryDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".BlacklistActivity"
             android:exported="false" />
         <activity

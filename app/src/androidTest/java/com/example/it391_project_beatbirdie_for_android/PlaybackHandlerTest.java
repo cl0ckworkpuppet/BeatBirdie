@@ -37,8 +37,8 @@ public class PlaybackHandlerTest {
 
         Uri testUri = Uri.fromFile(testFile);
         List<Song> songs = new ArrayList<>();
-        // Fixed: The Song constructor requires 6 arguments: title, artist, album, uri, albumId (long), and duration (int).
-        songs.add(new Song("Test Song", "Test Artist", "Test Album", testUri, "test_path", 0, 0));
+        // Fixed: The Song constructor requires 8 arguments: title, artist, album, uri, path, albumId (long), duration (int), trackNumber (int).
+        songs.add(new Song("Test Song", "Test Artist", "Test Album", testUri, "test_path", 0, 0, 0));
 
         // Test setting the song
         // We call playSong, which internally sets the current song.
